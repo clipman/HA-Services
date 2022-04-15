@@ -595,7 +595,6 @@ preferences {
    page(name: "mainPage")
    page(name: "haDevicePage")
    page(name: "haAddDevicePage")
-   page(name: "haTypePage")
    page(name: "haDeleteDevicePage")
 }
 
@@ -608,8 +607,8 @@ def mainPage() {
 		// 	return
 		// }
 		section("Configure Home Assistant API") {
-		   input "haURL", "text", title: "HA Address", required: true
-		   input "haToken", "text", title: "HA Token", required: true
+		   input "haURL", "text", title: "HomeAssistant external URL(ex, https://xxx.duckdns.org)", required: true
+		   input "haToken", "text", title: "HomeAssistant Token", required: true
 		}
 		section("[HA -> ST]") {
 		   href "haDevicePage", title: "Get HA Devices", description:""
@@ -622,14 +621,6 @@ def mainPage() {
 			href url:"${apiServerUrl("/api/smartapps/installations/${app.id}/config?access_token=${state.accessToken}")}", style:"embedded", required:false, title:"Config", description:"Tap, select, copy, then click \"Done\""
 			label title: "App Label (optional)", description: "Rename this App", defaultValue: app?.name, required: false
 		}
-	}
-}
-
-def haTypePage() {
-	dynamicPage(name: "haTypePage", title: "Select a type", nextPage: "mainPage") {
-	   section("Configure HA API") {
-		   input "haAddType", "enum", title: "type", required: true, options: ["Default Sensor", "Switch", "Color Light", "White Light", "Motion Sensor", "Power Meter", "Illuminance Sensor", "Door Sensor", "Presence Sensor", "Temperature Sensor", "Humidity Sensor", "Carbon Dioxide Measurement", "Tvoc Measurement", "Battery", "Vacuum", "Blind", "AirConditioner", "AirPurifier", "Button", "Fan", "FanSwitch", "FanPlug", "Plug", "Heater", "Washer", "Elevator", "YouTubeMusic", "GoogleHome", "Text", "Number", "NaverWeather", "XiaomiVacuum", "Gas Meter", "Computer", "API", "Binary"], defaultValue: "Default"
-	   }
 	}
 }
 
@@ -690,7 +681,7 @@ def haAddDevicePage() {
 			}
 		}
 	}
-	dynamicPage(name: "haAddDevicePage", nextPage: "haTypePage", title:"") {
+	dynamicPage(name: "haAddDevicePage", nextPage: "mainPage", title:"") {
 		section ("[HA -> ST] Add HA Devices") {
 			input(name: "selectedAddHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
 		}
@@ -748,25 +739,9 @@ def notifyCallback(physicalgraph.device.HubResponse hubResponse) {
 
 def updated() {
 	log.info "Updated with settings: ${settings}"
-	//log.info "settings[switch]: ${settings['switch']}"
-	//log.info "settings[airRemoval]: ${settings['airRemoval']}"
-	log.info "settings[airRemoval_switch]: ${settings['airRemoval_switch']}"
 	unsubscribe()
 	initialize()
 
-	//상태가 변하면 갱신할 스위치 및 센서(속성 센서 포함)
-	CAPABILITY_MAP.each { key, capability ->
-		capability["attributes"].each { attribute ->
-			for (item in settings[key]) {
-				subscribe(item, attribute, stateChangeHandler)
-			}
-			for (item in settings[key+"_switch"]) {
-				//log.info "key=${key}, subscribe(item=${item}, attribute=${attribute}, stateSwitchChangeHandler)"
-				subscribe(item, attribute, stateSwitchChangeHandler)
-			}
-		}
-	}
-	app.updateSetting("haAddType", "Default Sensor")
 	app.updateSetting("selectedAddHADevice", "None")
 	app.updateSetting("selectedDeleteHADevice", "None")
 }
@@ -797,18 +772,17 @@ def addHAChildDevice() {
 			def tmp = settings.selectedAddHADevice.split(" \\[ ")
 			def tmp2 = tmp[1].split(" \\]")
 			def entity_id = tmp2[0]
-			def dni = "ha-connector-" + entity_id
+			def dni = entity_id
 			def haDevice = getHADeviceByEntityId(entity_id)
 			if(haDevice) {
-				def dth = "HA " + haAddType
+				def dth = "HomeAssistant Services"
 				def name = haDevice.attributes.friendly_name
 				if(!name) {
 					name = entity_id
 				}
 				try {
-					def childDevice = addChildDevice("fison67", dth, dni, location.hubs[0].id, [
-						"label": name
-					])
+					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
+					def childDevice = addChildDevice("clipman", dth, dni, "", ["label": name])
 					childDevice.setHASetting(settings.haURL, settings.haToken, entity_id)
 					childDevice.setStatus(haDevice.state)
 					if(haDevice.attributes.unit_of_measurement) {
@@ -842,41 +816,6 @@ def initialize() {
 
 	deleteChildDevice()
 	addHAChildDevice()
-	refreshRegisteredHADeviceList()
-}
-
-def refreshRegisteredHADeviceList() {
-	def options = [
-		"method": "POST",
-		"path": "/api/services/ha_connector/refresh",
-		"headers": [
-			"HOST": settings.haURL,
-			"Authorization": "Bearer ${settings.haToken}",
-			"Content-Type": "application/json"
-		],
-		"body": []
-	]
-
-	def myhubAction = new physicalgraph.device.HubAction(options, null, [callback: null])
-	sendHubCommand(myhubAction)
-}
-
-def dataCallback(physicalgraph.device.HubResponse hubResponse) {
-	def msg, status, json = []
-	try {
-		msg = parseLanMessage(hubResponse.description)
-		status = msg.status
-		msg.json.each {
-			//HA의 Entity Data가 많으면 에러가 발생하기 때문에 Data량을 최대한 줄임
-			//def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
-			def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: ""]]
-			json.push(obj)
-		}
-		state.dataList = json
-		state.latestHttpResponse = status
-	} catch (e) {
-		log.warn "Exception caught while parsing data: "+e
-	}
 }
 
 def getDataList() {
@@ -894,31 +833,30 @@ def getDataList() {
 	sendHubCommand(myhubAction)
 }
 
-def deviceCommandList(device) {
-	device.supportedCommands.collectEntries { command->
-		[
-			(command.name): (command.arguments)
-		]
-	}
-}
-
-def deviceAttributeList(device) {
-	device.supportedAttributes.collectEntries { attribute->
-		try {
-			[
-				(attribute.name): device.currentValue(attribute.name)
-			]
-		} catch(e) {
-			[
-				(attribute.name): null
-			]
+def dataCallback(physicalgraph.device.HubResponse hubResponse) {
+	def msg, status, json = []
+	try {
+		msg = parseLanMessage(hubResponse.description)
+		status = msg.status
+		msg.json.each {
+            def entity_type = it.entity_id.split('\\.')[0]
+            if(entity_type != "sensor" && entity_type != "binary_sensor") {
+                //HA의 Entity Data가 많으면 에러가 발생하기 때문에 Data량을 최대한 줄임
+                def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+                //def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: ""]]
+			    json.push(obj)
+            }
 		}
+		state.dataList = json
+		state.latestHttpResponse = status
+	} catch (e) {
+		log.warn "Exception caught while parsing data: "+e
 	}
 }
 
-//HA -> ST
+//HA->ST
 def updateDevice() {
-	def dni = "ha-connector-" + params.entity_id
+	def dni = params.entity_id
 	def attr = null
 	def oldstate = null
 	try {
@@ -930,7 +868,7 @@ def updateDevice() {
 	try {
 		def device = getChildDevice(dni)
 		if(device) {
-			//log.debug "HA -> ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			//log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
 			if(params?.unit) {
 				device.setUnitOfMeasurement(params.unit)
 			}
@@ -960,102 +898,6 @@ def getHADevices() {
 		haDevices.push(childDevice.deviceNetworkId.substring(13))
 	}
 	def deviceJson = new groovy.json.JsonOutput().toJson([list: haDevices])
-	render contentType: "application/json", data: deviceJson
-}
-
-//ST2HA-Services에서 호출되며 platform stsensor와 platform stswitch의 표현식을 만드는데 사용됨
-def getSTDevices() {
-	def list = []
-	CAPABILITY_MAP.each { key, capability ->
-		capability["attributes"].each { attribute ->
-			if(settings[key]) {
-				settings[key].each { device ->
-					def obj = [:]
-					obj["dni"] = device.name		// obj["dni"] = device.deviceNetworkId
-					//obj["id"] = device.id			// obj["id"] = device.name
-					obj["name"] = device.displayName
-					obj["type"] = device.hasCommand("on") ? "switch" : "sensor"
-					try {
-						def theAtts = device.supportedAttributes
-						def sList = []
-						theAtts.each { att ->
-							sList.push(att.name)
-						}
-						obj["attr"] = sList
-					} catch(e) {
-					}
-					def existSameDevice = False
-					for ( item in list ) {
-						if(item['dni'] == device.name) {		//if(item['dni'] == device.deviceNetworkId) {
-							existSameDevice = True
-							break
-						}
-					}
-					if(existSameDevice == False) {
-						list.push(obj)
-					}
-				}
-			}
-		}
-	}
-	def deviceJson = new groovy.json.JsonOutput().toJson(list)
-	render contentType: "application/json", data: deviceJson
-}
-
-// ST->HA resource url을 호출할 경우에 실행, 갱신시(update_entity), 시작시, 주기적(scan_interval)으로 실행됨, switch 포함
-def getSTDevice() {
-	def status = null
-	def totalMap = [:]
-	def resultMap = [:]
-	CAPABILITY_MAP.each { key, capability ->
-		capability["attributes"].each { attribute ->
-			if(settings[key]) {
-				settings[key].each { device ->
-					def dni = device.name		//def dni = device.deviceNetworkId
-					if(dni == params.dni) {
-						if(params.attributes) {
-							//log.debug "ST -> HA >> (" + totalMap["entity_id"] + "." + params.attributes + ": " + device.currentValue(params.attributes)
-							status = device.currentValue(params.attributes)
-						} else {
-							status = device.currentValue("switch")
-						}
-
-						//clipman, 수정
-						//totalMap["entity_id"] = "sensor." + device.name	//totalMap["entity_id"] = "sensor.st_" + dni.toLowerCase()
-						totalMap["name"] = device.name
-
-						def theAtts = device.supportedAttributes
-						theAtts.each { att ->
-							try {
-								//def _attr = "${att.name}State"
-								//def val = device."$_attr".value
-								//if(val != null) {
-							   	//	resultMap["${att.name}"] = val
-								//}
-								//null 에러가 발생해서 아래와 같이 실행
-								def val = device.currentValue(att.name)
-								if(val != null) {
-							   		resultMap["${att.name}"] = val
-								}
-							} catch(e) {
-								log.error("${e} --> ${att.name}")
-							}
-						}
-						//log.debug "Switch:" + device.currentValue("switch")
-					}
-				}
-			}
-		}
-	}
-	totalMap['state'] = status
-	totalMap['attributes'] = resultMap
-	def deviceJson = new groovy.json.JsonOutput().toJson(totalMap)
-	//log.debug "[ST -> HA] ${params}, status: ${resultMap}"
-	if(status == null) {
-		log.warn "[ST -> HA] Device is not selected to [Add ST Device]: ${params.dni}"
-	} else {
-		//log.info "[ST -> HA] " + totalMap["name"] + ": ${status}"
-	}
 	render contentType: "application/json", data: deviceJson
 }
 
@@ -1127,11 +969,9 @@ mappings {
 	if (!params.access_token || (params.access_token && params.access_token != state.accessToken)) {
 		path("/config")					{ action: [GET: "authError"] }
 		path("/update")					{ action: [GET: "authError"] }
-		path("/getSTDevices")			{ action: [GET: "authError"] }
 		path("/getHADevices")			{ action: [GET: "authError"] }
 		path("/get") {
 			action: [
-				GET: "authError",
 				POST: "authError"
 			]
 		}
@@ -1144,11 +984,9 @@ mappings {
 	} else {
 		path("/config")					{ action: [GET: "renderConfig"] }
 		path("/update")				 	{ action: [GET: "updateDevice"] }
-		path("/getSTDevices")			{ action: [GET: "getSTDevices"] }
 		path("/getHADevices")			{ action: [GET: "getHADevices"] }
 		path("/get") {
 			action: [
-				GET: "getSTDevice",
 				POST: "updateSTDevice"
 			]
 		}

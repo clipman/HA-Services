@@ -1,0 +1,19 @@
+{
+  "title": "HA-Services",
+  "config": {
+    "step": {
+      "user": {
+        "description": "Enter the setting values(app_url, app_id, access_token) to install the HA-Services.",
+        "title": "HA-Services Settings",
+        "data": {
+          "app_url": "[%key:common::config_flow::data::app_url%]",
+          "app_id": "[%key:common::config_flow::data::app_id%]",
+          "access_token": "[%key:common::config_flow::data::access_token%]",
+        }
+      }
+    },
+    "abort": {
+      "one_instance_allowed": "Only a single instance is necessary."
+    }
+  }
+}

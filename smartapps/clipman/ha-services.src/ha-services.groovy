@@ -284,11 +284,11 @@ def dataCallback(physicalgraph.device.HubResponse hubResponse) {
 def getDataList() {
 	def service = "/api/states"
 	def params = [
-        uri: haURL,
-        path: service,
-        headers: ["Authorization": "Bearer " + haToken],
-        requestContentType: "application/json"
-    ]
+		uri: haURL,
+		path: service,
+		headers: ["Authorization": "Bearer " + haToken],
+		requestContentType: "application/json"
+	]
 	def switchEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command", "esphome",
 						"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
 	def json = []
@@ -330,9 +330,44 @@ def updateDevice() {
 	try {
 		def device = getChildDevice(dni)
 		if(device) {
-			//log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			//HA->ST >> [climate.kocom_room2_thermostat] state:heat attr:[current_temperature:24.0, friendly_name:작은방난방, hvac_modes:[off, heat], max_temp:25.0, min_temp:20.0, supported_features:1, target_temp_step:1.0, temperature:23.0] oldstate:off
 			if (params.value != oldstate) {
-				device.setStatus(params.value)
+				def entity_type = dni.split('\\.')[0]
+				def onOff = params.value
+				switch(entity_type) {
+					case "vacuum":
+						if(params.value == "docked" || params.value == "returning") {
+							onOff = "off"
+						} else {
+							onOff = "on"
+						}
+						break;
+					case "cover":
+						if(params.value == "open" || params.value == "opening" || params.value == "partially open") {
+							onOff = "on"
+						} else {
+							onOff = "off"
+						}
+						break;
+					case "lock":
+						if(params.value == "locked") {
+							onOff = "off"
+						} else {
+							onOff = "on"
+						}
+						break;
+					case "climate":
+						if(params.value == "off") {
+							onOff = "off"
+						} else {
+							onOff = "on"
+						}
+						break;
+					default:	//switch, light, fan, input_boolean, ...
+						break;
+				}
+				device.setStatus(onOff)
 			}
 		}
 	} catch(err) {

@@ -120,12 +120,12 @@ def services(service, data) {
 	}
 
 	def params = [
-        uri: haURL,
-        path: service,
-        headers: ["Authorization": "Bearer " + haToken],
-        requestContentType: "application/json",
-        body: data
-    ]
+		uri: haURL,
+		path: service,
+		headers: ["Authorization": "Bearer " + haToken],
+		requestContentType: "application/json",
+		body: data
+	]
 	log.info "Service: $params"
 	try {
 		httpPost(params) { resp ->

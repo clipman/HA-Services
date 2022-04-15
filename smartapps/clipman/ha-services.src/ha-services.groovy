@@ -146,9 +146,7 @@ def addHAChildDevice() {
 				try {
 					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
 					def childDevice = addChildDevice("clipman", dth, dni, "", ["label": name])
-					childDevice.setHASetting(settings.haURL, settings.haToken, entity_id)
-					childDevice.setStatus(haDevice.state)
-					childDevice.refresh()
+					childDevice.setInit(settings.haURL, settings.haToken, haDevice.state)
 				} catch(err) {
 					log.error "Add HA Device ERROR >> ${err}"
 				}
@@ -280,12 +278,12 @@ mappings {
 	if (!params.access_token || (params.access_token && params.access_token != state.accessToken)) {
 		path("/config")	{ action: [GET: "authError"] }
 		path("/update")	{ action: [GET: "authError"] }
-        path("/getHADevices") { action: [GET: "authError"] }
+		path("/getHADevices") { action: [GET: "authError"] }
 		path("/get")    { action: [POST: "authError"] }
 	} else {
 		path("/config")	{ action: [GET: "renderConfig"] }
 		path("/update")	{ action: [GET: "updateDevice"] }
-        path("/getHADevices") { action: [GET: "getHADevices"] }
+		path("/getHADevices") { action: [GET: "getHADevices"] }
 		path("/get")    { action: [POST: "updateSTDevice"] }
 	}
 }

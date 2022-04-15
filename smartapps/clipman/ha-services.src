@@ -1,0 +1,1162 @@
+/**
+ *  HA-Services v2022-04-15
+ *  clipman@naver.com
+ *  날자
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ *  2021-03-31 clipman
+ *  input_text, input_number 추가
+ *  IP Sensor, WirelessCharger Sensor, YouTubeMusic 추가
+ *  2021-05-06 clipman
+ *  GoogleHome 추가
+ *  2021-05-29 clipman
+ *  NaverWeather 추가
+ *  2021-06-03 clipman
+ *  Gas Meter 추가
+ *  2021-06-12 clipman
+ *  505행에서 HA에서 가져올 센서 필터링(haDevice)
+ *  2021-06-30 clipman
+ *  ST->HA관련 수정, attrList에 gasMeter, playbackStatus, volume, airConditionerMode, dustLevel, fineDustLevel, odorLevel 추가
+ *  2021-06-30 clipman
+ *  dni대신에 name
+ *  2021-07-17 clipman
+ *  Washer, Plug, FanSwitch, FanPlug
+ *  2021-07-22 clipman
+ *  Elevator
+ *  2021-07-23 clipman
+ *  AirConditioner
+ *  2021-08-02 clipman
+ *  ST캐퍼빌리티추가
+ *  2022-03-16 clipman
+ *  dataCallback함수 수정, HA의 Entity Data가 많으면 에러가 발생하기 때문에 Data량을 최대한 줄임
+ *  2022-03-17 clipman
+ *  AirPurifier
+ */
+
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import groovy.transform.Field
+
+@Field
+CAPABILITY_MAP = [
+	"airConditionerFanMode": [
+		name: "Air Conditioner Fan Mode",
+		capability: "capability.airConditionerFanMode",
+		attributes: [
+			"fanMode"
+		]
+	],
+	"airConditionerMode": [
+		name: "Air Conditioner Mode",
+		capability: "capability.airConditionerMode",
+		attributes: [
+			"airConditionerMode"
+		]
+	],
+	"airPurifierFanMode": [
+		name: "Air Purifier Fan Mode",
+		capability: "capability.airPurifierFanMode",
+		attributes: [
+			"airPurifierFanMode"
+		]
+	],
+	"airQualitySensor": [
+		name: "Air Quality Sensor",
+		capability: "capability.airQualitySensor",
+		attributes: [
+			"airQuality"
+		]
+	],
+	"audioMute": [
+		name: "Audio Mute",
+		capability: "capability.audioMute",
+		attributes: [
+			"mute"
+		]
+	],
+	"audioVolume": [
+		name: "Audio Volume",
+		capability: "capability.audioVolume",
+		attributes: [
+			"volume"
+		]
+	],
+	"battery": [
+		name: "Battery",
+		capability: "capability.battery",
+		attributes: [
+			"battery"
+		]
+	],
+	"button": [
+		name: "Button",
+		capability: "capability.button",
+		attributes: [
+			"button",
+			"numberOfButtons",
+			"supportedButtonValues"
+		]
+	],
+	"carbonDioxideHealthConcern": [
+		name: "Carbon Dioxide Health Concern",
+		capability: "capability.carbonDioxideHealthConcern",
+		attributes: [
+			"carbonDioxideHealthConcern"
+		]
+	],
+	"carbonDioxideMeasurement": [
+		name: "Carbon Dioxide Measurement",
+		capability: "capability.carbonDioxideMeasurement",
+		attributes: [
+			"carbonDioxide"
+		]
+	],
+	"carbonMonoxideMeasurement": [
+		name: "Carbon Monoxide Measurement",
+		capability: "capability.carbonMonoxideMeasurement",
+		attributes: [
+			"carbonMonoxideLevel"
+		]
+	],
+	"colorControl": [
+		name: "Color Control",
+		capability: "capability.colorControl",
+		attributes: [
+			"saturation",
+			"color",
+			"hue"
+		]
+	],
+	"colorTemperature": [
+		name: "Color Temperature",
+		capability: "capability.colorTemperature",
+		attributes: [
+			"colorTemperature"
+		]
+	],
+	"contactSensor": [
+		name: "Contact Sensor",
+		capability: "capability.contactSensor",
+		attributes: [
+			"contact"
+		]
+	],
+	"dustHealthConcern": [
+		name: "Dust Health Concern",
+		capability: "capability.dustHealthConcern",
+		attributes: [
+			"dustHealthConcern"
+		]
+	],
+	"dustSensor": [
+		name: "Dust Sensor",
+		capability: "capability.dustSensor",
+		attributes: [
+			"dustLevel",
+			"fineDustLevel"
+		]
+	],
+	"elevatorCall": [
+		name: "Elevator Call",
+		capability: "capability.elevatorCall",
+		attributes: [
+			"callStatus"
+		]
+	],
+	"energyMeter": [
+		name: "Energy Meter",
+		capability: "capability.energyMeter",
+		attributes: [
+			"energy"
+		]
+	],
+	"execute": [
+		name: "Execute",
+		capability: "capability.execute",
+		attributes: [
+			"data"
+		]
+	],
+	"fanSpeed": [
+		name: "Fan Speed",
+		capability: "capability.fanSpeed",
+		attributes: [
+			"fanSpeed"
+		]
+	],
+	"fineDustHealthConcern": [
+		name: "Fine Dust Health Concern",
+		capability: "capability.fineDustHealthConcern",
+		attributes: [
+			"fineDustHealthConcern"
+		]
+	],
+	"gasDetector": [
+		name: "Gas Detector",
+		capability: "capability.gasDetector",
+		attributes: [
+			"gas"
+		]
+	],
+	"gasMeter": [
+		name: "Gas Meter",
+		capability: "capability.gasMeter",
+		attributes: [
+			"gasMeter"
+		]
+	],
+	"healthCheck": [
+		name: "Health Check",
+		capability: "capability.healthCheck",
+		attributes: [
+			"checkInterval",
+			"healthStatus"
+		]
+	],
+	"humidifierMode": [
+		name: "Humidifier Mode",
+		capability: "capability.humidifierMode",
+		attributes: [
+			"humidifierMode"
+		]
+	],
+	"illuminanceMeasurement": [
+		name: "Illuminance Measurement",
+		capability: "capability.illuminanceMeasurement",
+		attributes: [
+			"illuminance"
+		]
+	],
+	"mediaInputSource": [
+		name: "Media Input Source",
+		capability: "capability.mediaInputSource",
+		attributes: [
+			"supportedInputSources",
+			"inputSource"
+		]
+	],
+	"mediaPlayback": [
+		name: "Media Playback",
+		capability: "capability.mediaPlayback",
+		attributes: [
+			"supportedPlaybackCommands",
+			"playbackStatus"
+		]
+	],
+	"mediaPlaybackRepeat": [
+		name: "Media Playback Repeat",
+		capability: "capability.mediaPlaybackRepeat",
+		attributes: [
+			"playbackRepeatMode"
+		]
+	],
+	"mediaPlaybackShuffle": [
+		name: "Media Playback Shuffle",
+		capability: "capability.mediaPlaybackShuffle",
+		attributes: [
+			"playbackShuffle"
+		]
+	],
+	"mediaTrackControl": [
+		name: "Media Track Control",
+		capability: "capability.mediaTrackControl",
+		attributes: [
+			"supportedTrackControlCommands"
+		]
+	],
+	"motionSensor": [
+		name: "Motion Sensor",
+		capability: "capability.motionSensor",
+		attributes: [
+			"motion"
+		]
+	],
+	"odorSensor": [
+		name: "Odor Sensor",
+		capability: "capability.odorSensor",
+		attributes: [
+			"odorLevel"
+		]
+	],
+	"powerMeter": [
+		name: "Power Meter",
+		capability: "capability.powerMeter",
+		attributes: [
+			"power"
+		]
+	],
+	"presenceSensor": [
+		name: "Presence Sensor",
+		capability: "capability.presenceSensor",
+		attributes: [
+			"presence"
+		]
+	],
+	"radonHealthConcern": [
+		name: "Radon Health Concern",
+		capability: "capability.radonHealthConcern",
+		attributes: [
+			"radonHealthConcern"
+		]
+	],
+	"radonMeasurement": [
+		name: "Radon Measurement",
+		capability: "capability.radonMeasurement",
+		attributes: [
+			"radonLevel"
+		]
+	],
+	"relativeHumidityMeasurement": [
+		name: "Relative Humidity Measurement",
+		capability: "capability.relativeHumidityMeasurement",
+		attributes: [
+			"humidity"
+		]
+	],
+	"signalStrength": [
+		name: "Signal Strength",
+		capability: "capability.signalStrength",
+		attributes: [
+			"lqi",
+			"rssi"
+		]
+	],
+	"statelessChannelButton": [
+		name: "Stateless Channel Button",
+		capability: "capability.statelessChannelButton",
+		attributes: [
+			"availableChannelButtons"
+		]
+	],
+	"switch": [
+		name: "Switch",
+		capability: "capability.switch",
+		attributes: [
+			"switch"
+		]
+	],
+	"switchLevel": [
+		name: "Switch Level",
+		capability: "capability.switchLevel",
+		attributes: [
+			"level"
+		]
+	],
+	"temperatureMeasurement": [
+		name: "Temperature Measurement",
+		capability: "capability.temperatureMeasurement",
+		attributes: [
+			"temperature"
+		]
+	],
+	"thermostatCoolingSetpoint": [
+		name: "Thermostat Cooling Setpoint",
+		capability: "capability.thermostatCoolingSetpoint",
+		attributes: [
+			"coolingSetpoint"
+		]
+	],
+	"thermostatFanMode": [
+		name: "Thermostat Fan Mode",
+		capability: "capability.thermostatFanMode",
+		attributes: [
+			"thermostatFanMode",
+			"supportedThermostatFanModes"
+		]
+	],
+	"thermostatHeatingSetpoint": [
+		name: "Thermostat Heating Setpoint",
+		capability: "capability.thermostatHeatingSetpoint",
+		attributes: [
+			"heatingSetpoint"
+		]
+	],
+	"thermostatMode": [
+		name: "Thermostat Mode",
+		capability: "capability.thermostatMode",
+		attributes: [
+			"thermostatMode",
+			"supportedThermostatModes"
+		]
+	],
+	"thermostatOperatingState": [
+		name: "Thermostat Operating State",
+		capability: "capability.thermostatOperatingState",
+		attributes: [
+			"thermostatOperatingState"
+		]
+	],
+	"tvocHealthConcern": [
+		name: "Tvoc Health Concern",
+		capability: "capability.tvocHealthConcern",
+		attributes: [
+			"tvocHealthConcern"
+		]
+	],
+	"tvocMeasurement": [
+		name: "Tvoc Measurement",
+		capability: "capability.tvocMeasurement",
+		attributes: [
+			"tvocLevel"
+		]
+	],
+	"ultravioletIndex": [
+		name: "Ultraviolet Index",
+		capability: "capability.ultravioletIndex",
+		attributes: [
+			"ultravioletIndex"
+		]
+	],
+	"veryFineDustHealthConcern": [
+		name: "Very Fine Dust Health Concern",
+		capability: "capability.veryFineDustHealthConcern",
+		attributes: [
+			"veryFineDustHealthConcern"
+		]
+	],
+	"veryFineDustSensor": [
+		name: "Very Fine Dust Sensor",
+		capability: "capability.veryFineDustSensor",
+		attributes: [
+			"veryFineDustLevel"
+		]
+	],
+	"voltageMeasurement": [
+		name: "Voltage Measurement",
+		capability: "capability.voltageMeasurement",
+		attributes: [
+			"voltage"
+		]
+	],
+	"windSpeed": [
+		name: "Wind Speed",
+		capability: "capability.windSpeed",
+		attributes: [
+			"windspeed"
+		]
+	],
+	"airClass": [
+		name: "AirQulity Class",
+		capability: "capability.circlecircle06391.airClass",
+		attributes: [
+			"airClass"
+		]
+	],
+	"airPurifierMode": [
+		name: "Air Purifier Mode",
+		capability: "capability.circlecircle06391.airPurifierMode",
+		attributes: [
+			"airPurifierMode",
+			"supportedAirPurifierModes"
+		]
+	],
+	"airRemoval": [
+		name: "Air Removal",
+		capability: "capability.circlecircle06391.airRemoval",
+		attributes: [
+			"airRemoval"
+		]
+	],
+	"circulateDir": [
+		name: "Circulate Dir",
+		capability: "capability.circlecircle06391.circulateDir",
+		attributes: [
+			"circulateDir"
+		]
+	],
+	"binary": [
+		name: "Binary Sensor",
+		capability: "capability.circlecircle06391.binary",
+		attributes: [
+			"switch"
+		]
+	],
+	"dustClass": [
+		name: "Dust Sensor Class",
+		capability: "capability.circlecircle06391.dustClass",
+		attributes: [
+			"dustClass"
+		]
+	],
+	"fineDustClass": [
+		name: "Fine Dust Sensor Class",
+		capability: "capability.circlecircle06391.fineDustClass",
+		attributes: [
+			"fineDustClass"
+		]
+	],
+	"odorClass": [
+		name: "Odor Sensor Class",
+		capability: "capability.circlecircle06391.odorClass",
+		attributes: [
+			"odorClass"
+		]
+	],
+	"precipChance": [
+		name: "Precip Chance",
+		capability: "capability.circlecircle06391.precipChance",
+		attributes: [
+			"precipChance"
+		]
+	],
+	"pressure": [
+		name: "Pressure",
+		capability: "capability.circlecircle06391.pressure",
+		attributes: [
+			"pressure"
+		]
+	],
+	"pressureTrend": [
+		name: "Pressure Trend",
+		capability: "capability.circlecircle06391.pressureTrend",
+		attributes: [
+			"pressureTrend"
+		]
+	],
+	"signalLighting": [
+		name: "Signal Lighting",
+		capability: "capability.circlecircle06391.signalLighting",
+		attributes: [
+			"signalLighting"
+		]
+	],
+	"status": [
+		name: "Status",
+		capability: "capability.circlecircle06391.status",
+		attributes: [
+			"statusbar"
+		]
+	],
+	"statusBar": [
+		name: "Status Bar",
+		capability: "capability.circlecircle06391.statusBar",
+		attributes: [
+			"status"
+		]
+	],
+	"ultravioletClass": [
+		name: "Ultraviolet Class",
+		capability: "capability.circlecircle06391.ultravioletClass",
+		attributes: [
+			"ultravioletClass"
+		]
+	],
+	"veryFineDustClass": [
+		name: "Very Fine Dust Sensor Class",
+		capability: "capability.circlecircle06391.veryFineDustClass",
+		attributes: [
+			"veryFineDustClass"
+		]
+	],
+	"visibility": [
+		name: "Visibility",
+		capability: "capability.circlecircle06391.visibility",
+		attributes: [
+			"visibility"
+		]
+	],
+	"waterSensor": [
+		name: "WaterSensor",
+		capability: "capability.borderreason25422.waterSensor",
+		attributes: [
+			"water"
+		]
+	],
+	"weatherForecast": [
+		name: "Weather Forecast",
+		capability: "capability.circlecircle06391.weatherforecast",
+		attributes: [
+			"weatherForecast"
+		]
+	]
+]
+
+definition(
+	name: "HA-Services",
+	namespace: "clipman",
+	author: "clipman",
+	description: "Home Assistant Services Call",
+	category: "My Apps",
+	iconUrl: "https://community-home-assistant-assets.s3.dualstack.us-west-2.amazonaws.com/original/3X/6/3/63f75921214e158bc02336dc864c096b11889f14.png",
+	iconX2Url: "https://community-home-assistant-assets.s3.dualstack.us-west-2.amazonaws.com/original/3X/6/3/63f75921214e158bc02336dc864c096b11889f14.png",
+	iconX3Url: "https://community-home-assistant-assets.s3.dualstack.us-west-2.amazonaws.com/original/3X/6/3/63f75921214e158bc02336dc864c096b11889f14.png",
+	oauth: true
+)
+
+preferences {
+   page(name: "mainPage")
+   page(name: "haDevicePage")
+   page(name: "haAddDevicePage")
+   page(name: "haTypePage")
+   page(name: "haDeleteDevicePage")
+}
+
+def mainPage() {
+	dynamicPage(name: "mainPage", title: "", nextPage: null, uninstall: true, install: true) {
+		// if(location.hubs.size() < 1) {
+		// 	section() {
+		// 		paragraph "[ERROR]\nSmartThings Hub not found.\nYou need a SmartThings Hub to use HA connector."
+		// 	}
+		// 	return
+		// }
+		section("Configure Home Assistant API") {
+		   input "haURL", "text", title: "HA Address", required: true
+		   input "haToken", "text", title: "HA Token", required: true
+		}
+		section("[HA -> ST]") {
+		   href "haDevicePage", title: "Get HA Devices", description:""
+		   input "haDevice", "text", title: "Filter", required: false
+		   href "haAddDevicePage", title: "Add HA Device", description:""
+		   href "haDeleteDevicePage", title: "Delete HA Device", description:""
+		}
+		section() {
+			paragraph "View this SmartApp's configuration to use it in other places."
+			href url:"${apiServerUrl("/api/smartapps/installations/${app.id}/config?access_token=${state.accessToken}")}", style:"embedded", required:false, title:"Config", description:"Tap, select, copy, then click \"Done\""
+			label title: "App Label (optional)", description: "Rename this App", defaultValue: app?.name, required: false
+		}
+	}
+}
+
+def haTypePage() {
+	dynamicPage(name: "haTypePage", title: "Select a type", nextPage: "mainPage") {
+	   section("Configure HA API") {
+		   input "haAddType", "enum", title: "type", required: true, options: ["Default Sensor", "Switch", "Color Light", "White Light", "Motion Sensor", "Power Meter", "Illuminance Sensor", "Door Sensor", "Presence Sensor", "Temperature Sensor", "Humidity Sensor", "Carbon Dioxide Measurement", "Tvoc Measurement", "Battery", "Vacuum", "Blind", "AirConditioner", "AirPurifier", "Button", "Fan", "FanSwitch", "FanPlug", "Plug", "Heater", "Washer", "Elevator", "YouTubeMusic", "GoogleHome", "Text", "Number", "NaverWeather", "XiaomiVacuum", "Gas Meter", "Computer", "API", "Binary"], defaultValue: "Default"
+	   }
+	}
+}
+
+def _getServerURL() {
+	 return settings.haURL
+}
+
+def _getPassword() {
+	 return settings.haToken
+}
+
+def haDevicePage() {
+	//log.debug "Executing haDevicePage"
+	getDataList()
+
+	dynamicPage(name: "haDevicePage", title:"[HA -> ST] Get HA Devices", refreshInterval:5) {
+		section("Please wait for the API to answer, this might take a couple of seconds.") {
+			if(state.latestHttpResponse) {
+				if(state.latestHttpResponse == 200) {
+					paragraph "Connected \nOK: 200"
+				} else {
+					paragraph "Connection error \nHTTP response code: " + state.latestHttpResponse
+				}
+			}
+		}
+	}
+}
+
+def haAddDevicePage() {
+	def addedDNIList = []
+	def childDevices = getAllChildDevices()
+	childDevices.each { childDevice->
+		addedDNIList.push(childDevice.deviceNetworkId)
+	}
+
+	def list = []
+	list.push("None")
+	state.dataList.each {
+		def entity_id = "${it.entity_id}"
+		def friendly_name = "${it.attributes.friendly_name}"
+		if(friendly_name == null) {
+			friendly_name = ""
+		}
+		//if(!addedDNIList.contains("ha-connector-" + entity_id)) {
+		if(!addedDNIList.contains(entity_id)) {
+            if(settings.haDevice == null || settings.haDevice == "") {
+				if(entity_id.contains("light.") || entity_id.contains("switch.") || entity_id.contains("fan.") || entity_id.contains("cover.") || entity_id.contains("sensor.") || entity_id.contains("vacuum.") || entity_id.contains("device_tracker.") || entity_id.contains("climate.") || entity_id.contains("media_player.") || entity_id.contains("input_text.") || entity_id.contains("input_number.")) {
+					//if(!entity_id.startsWith("sensor.st_") && !entity_id.startsWith("switch.st_")) {
+						list.push("${friendly_name} [ ${entity_id} ]")
+					//}
+				}
+			} else {
+				if(entity_id.contains(settings.haDevice) || friendly_name.contains(settings.haDevice)) {
+					//if(!entity_id.startsWith("sensor.st_") && !entity_id.startsWith("switch.st_")) {
+						list.push("${friendly_name} [ ${entity_id} ]")
+					//}
+				}
+			}
+		}
+	}
+	dynamicPage(name: "haAddDevicePage", nextPage: "haTypePage", title:"") {
+		section ("[HA -> ST] Add HA Devices") {
+			input(name: "selectedAddHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
+		}
+	}
+
+}
+
+def haDeleteDevicePage() {
+	//log.debug "Executing Delete Page"
+
+	def list = []
+	list.push("None")
+	def childDevices = getAllChildDevices()
+	childDevices.each { childDevice->
+		list.push(childDevice.label + " -> " + childDevice.deviceNetworkId)
+	}
+	dynamicPage(name: "haDeleteDevicePage", nextPage: "mainPage", title:"") {
+		section ("[HA -> ST] Delete HA Device") {
+			input(name: "selectedDeleteHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
+		}
+	}
+}
+
+def installed() {
+	//log.debug "Installed with settings: ${settings}"
+
+	initialize()
+
+	if (!state.accessToken) {
+		createAccessToken()
+	}
+
+	app.updateSetting("selectedAddHADevice", "None")
+	app.updateSetting("selectedDeleteHADevice", "None")
+}
+
+def existValueInList(list, value) {
+	for (item in list) {
+		if(item.toString() == value) {		//if(item == value) {
+			return true
+		}
+	}
+	return false
+}
+
+def notifyCallback(physicalgraph.device.HubResponse hubResponse) {
+	def msg, json, status
+	try {
+		msg = parseLanMessage(hubResponse.description)
+		//log.debug(msg)
+	} catch (e) {
+		log.warn "Exception caught while parsing data: "+e
+	}
+}
+
+def updated() {
+	log.info "Updated with settings: ${settings}"
+	//log.info "settings[switch]: ${settings['switch']}"
+	//log.info "settings[airRemoval]: ${settings['airRemoval']}"
+	log.info "settings[airRemoval_switch]: ${settings['airRemoval_switch']}"
+	unsubscribe()
+	initialize()
+
+	//상태가 변하면 갱신할 스위치 및 센서(속성 센서 포함)
+	CAPABILITY_MAP.each { key, capability ->
+		capability["attributes"].each { attribute ->
+			for (item in settings[key]) {
+				subscribe(item, attribute, stateChangeHandler)
+			}
+			for (item in settings[key+"_switch"]) {
+				//log.info "key=${key}, subscribe(item=${item}, attribute=${attribute}, stateSwitchChangeHandler)"
+				subscribe(item, attribute, stateSwitchChangeHandler)
+			}
+		}
+	}
+	app.updateSetting("haAddType", "Default Sensor")
+	app.updateSetting("selectedAddHADevice", "None")
+	app.updateSetting("selectedDeleteHADevice", "None")
+}
+
+// Return list of displayNames
+def getDeviceNames(devices) {
+	def list = []
+	devices.each { device->
+		list.push(device.displayName)
+	}
+	list
+}
+
+def getHADeviceByEntityId(entity_id) {
+	def target
+	state.dataList.each { haDevice ->
+		if(haDevice.entity_id == entity_id) {
+			target = haDevice
+		}
+	}
+	target
+}
+
+def addHAChildDevice() {
+	if(settings.selectedAddHADevice) {
+		if(settings.selectedAddHADevice != "None") {
+			//log.debug "ADD >> " + settings.selectedAddHADevice
+			def tmp = settings.selectedAddHADevice.split(" \\[ ")
+			def tmp2 = tmp[1].split(" \\]")
+			def entity_id = tmp2[0]
+			def dni = "ha-connector-" + entity_id
+			def haDevice = getHADeviceByEntityId(entity_id)
+			if(haDevice) {
+				def dth = "HA " + haAddType
+				def name = haDevice.attributes.friendly_name
+				if(!name) {
+					name = entity_id
+				}
+				try {
+					def childDevice = addChildDevice("fison67", dth, dni, location.hubs[0].id, [
+						"label": name
+					])
+					childDevice.setHASetting(settings.haURL, settings.haToken, entity_id)
+					childDevice.setStatus(haDevice.state)
+					if(haDevice.attributes.unit_of_measurement) {
+						childDevice.setUnitOfMeasurement(haDevice.attributes.unit_of_measurement)
+					}
+					childDevice.refresh()
+				} catch(err) {
+					log.error "Add HA Device ERROR >> ${err}"
+				}
+			}
+		}
+	}
+}
+
+def deleteChildDevice() {
+	if(settings.selectedDeleteHADevice) {
+		if(settings.selectedDeleteHADevice != "None") {
+			//log.debug "DELETE >> " + settings.selectedDeleteHADevice
+			def nameAndDni = settings.selectedDeleteHADevice.split(" -> ")
+			try {
+				deleteChildDevice(nameAndDni[1])
+			} catch(err) {
+				//
+			}
+		}
+	}
+}
+
+def initialize() {
+	//log.debug "initialize"
+
+	deleteChildDevice()
+	addHAChildDevice()
+	refreshRegisteredHADeviceList()
+}
+
+def refreshRegisteredHADeviceList() {
+	def options = [
+		"method": "POST",
+		"path": "/api/services/ha_connector/refresh",
+		"headers": [
+			"HOST": settings.haURL,
+			"Authorization": "Bearer ${settings.haToken}",
+			"Content-Type": "application/json"
+		],
+		"body": []
+	]
+
+	def myhubAction = new physicalgraph.device.HubAction(options, null, [callback: null])
+	sendHubCommand(myhubAction)
+}
+
+def dataCallback(physicalgraph.device.HubResponse hubResponse) {
+	def msg, status, json = []
+	try {
+		msg = parseLanMessage(hubResponse.description)
+		status = msg.status
+		msg.json.each {
+			//HA의 Entity Data가 많으면 에러가 발생하기 때문에 Data량을 최대한 줄임
+			//def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+			def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: ""]]
+			json.push(obj)
+		}
+		state.dataList = json
+		state.latestHttpResponse = status
+	} catch (e) {
+		log.warn "Exception caught while parsing data: "+e
+	}
+}
+
+def getDataList() {
+	def options = [
+		"method": "GET",
+		"path": "/api/states",
+		"headers": [
+			"HOST": settings.haURL,
+			"Authorization": "Bearer ${settings.haToken}",
+			"Content-Type": "application/json"
+		]
+	]
+
+	def myhubAction = new physicalgraph.device.HubAction(options, null, [callback: dataCallback])
+	sendHubCommand(myhubAction)
+}
+
+def deviceCommandList(device) {
+	device.supportedCommands.collectEntries { command->
+		[
+			(command.name): (command.arguments)
+		]
+	}
+}
+
+def deviceAttributeList(device) {
+	device.supportedAttributes.collectEntries { attribute->
+		try {
+			[
+				(attribute.name): device.currentValue(attribute.name)
+			]
+		} catch(e) {
+			[
+				(attribute.name): null
+			]
+		}
+	}
+}
+
+//HA -> ST
+def updateDevice() {
+	def dni = "ha-connector-" + params.entity_id
+	def attr = null
+	def oldstate = null
+	try {
+		attr = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
+	} catch(err) {
+		//log.debug "${dni} attr decoding error : "+params.attr
+	}
+	oldstate = params?.old
+	try {
+		def device = getChildDevice(dni)
+		if(device) {
+			//log.debug "HA -> ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			if(params?.unit) {
+				device.setUnitOfMeasurement(params.unit)
+			}
+			if(device.state?.hasSetStatusMap == true) {
+				def obj = [:]
+				obj["state"] = params.value
+				obj["attr"] = attr
+				obj["oldstate"] = oldstate
+				device.setStatusMap(obj)
+			} else {
+				if (params.value != oldstate) {
+					device.setStatus(params.value)
+				}
+			}
+		}
+	} catch(err) {
+		log.error "${err}"
+	}
+	def deviceJson = new groovy.json.JsonOutput().toJson([result: true])
+	render contentType: "application/json", data: deviceJson
+}
+
+def getHADevices() {
+	def haDevices = []
+	def childDevices = getAllChildDevices()
+	childDevices.each { childDevice->
+		haDevices.push(childDevice.deviceNetworkId.substring(13))
+	}
+	def deviceJson = new groovy.json.JsonOutput().toJson([list: haDevices])
+	render contentType: "application/json", data: deviceJson
+}
+
+//ST2HA-Services에서 호출되며 platform stsensor와 platform stswitch의 표현식을 만드는데 사용됨
+def getSTDevices() {
+	def list = []
+	CAPABILITY_MAP.each { key, capability ->
+		capability["attributes"].each { attribute ->
+			if(settings[key]) {
+				settings[key].each { device ->
+					def obj = [:]
+					obj["dni"] = device.name		// obj["dni"] = device.deviceNetworkId
+					//obj["id"] = device.id			// obj["id"] = device.name
+					obj["name"] = device.displayName
+					obj["type"] = device.hasCommand("on") ? "switch" : "sensor"
+					try {
+						def theAtts = device.supportedAttributes
+						def sList = []
+						theAtts.each { att ->
+							sList.push(att.name)
+						}
+						obj["attr"] = sList
+					} catch(e) {
+					}
+					def existSameDevice = False
+					for ( item in list ) {
+						if(item['dni'] == device.name) {		//if(item['dni'] == device.deviceNetworkId) {
+							existSameDevice = True
+							break
+						}
+					}
+					if(existSameDevice == False) {
+						list.push(obj)
+					}
+				}
+			}
+		}
+	}
+	def deviceJson = new groovy.json.JsonOutput().toJson(list)
+	render contentType: "application/json", data: deviceJson
+}
+
+// ST->HA resource url을 호출할 경우에 실행, 갱신시(update_entity), 시작시, 주기적(scan_interval)으로 실행됨, switch 포함
+def getSTDevice() {
+	def status = null
+	def totalMap = [:]
+	def resultMap = [:]
+	CAPABILITY_MAP.each { key, capability ->
+		capability["attributes"].each { attribute ->
+			if(settings[key]) {
+				settings[key].each { device ->
+					def dni = device.name		//def dni = device.deviceNetworkId
+					if(dni == params.dni) {
+						if(params.attributes) {
+							//log.debug "ST -> HA >> (" + totalMap["entity_id"] + "." + params.attributes + ": " + device.currentValue(params.attributes)
+							status = device.currentValue(params.attributes)
+						} else {
+							status = device.currentValue("switch")
+						}
+
+						//clipman, 수정
+						//totalMap["entity_id"] = "sensor." + device.name	//totalMap["entity_id"] = "sensor.st_" + dni.toLowerCase()
+						totalMap["name"] = device.name
+
+						def theAtts = device.supportedAttributes
+						theAtts.each { att ->
+							try {
+								//def _attr = "${att.name}State"
+								//def val = device."$_attr".value
+								//if(val != null) {
+							   	//	resultMap["${att.name}"] = val
+								//}
+								//null 에러가 발생해서 아래와 같이 실행
+								def val = device.currentValue(att.name)
+								if(val != null) {
+							   		resultMap["${att.name}"] = val
+								}
+							} catch(e) {
+								log.error("${e} --> ${att.name}")
+							}
+						}
+						//log.debug "Switch:" + device.currentValue("switch")
+					}
+				}
+			}
+		}
+	}
+	totalMap['state'] = status
+	totalMap['attributes'] = resultMap
+	def deviceJson = new groovy.json.JsonOutput().toJson(totalMap)
+	//log.debug "[ST -> HA] ${params}, status: ${resultMap}"
+	if(status == null) {
+		log.warn "[ST -> HA] Device is not selected to [Add ST Device]: ${params.dni}"
+	} else {
+		//log.info "[ST -> HA] " + totalMap["name"] + ": ${status}"
+	}
+	render contentType: "application/json", data: deviceJson
+}
+
+//HA->ST HA에서 변경한 Switch상태를 ST에 반영(on, off)
+def updateSTDevice() {
+	//log.debug "POST >>>> params:${params}"
+	//params:[turn:on, attributes:switch, dni:anbang_gonggiceongjeonggi, ...]
+	def state = params.turn					//"${params.turn}"	// on, off
+
+	if(settings["switch"]) {				//switch
+		settings["switch"].each { device ->
+			if(device.name == params.dni) {
+				device."$params.turn"()
+			}
+		}
+	}
+	render contentType: "text/html", data: state
+}
+
+//HA->ST HA에서 ST의 명령어를 호출
+//url: https://graph-ap02-apnortheast2.api.smartthings.com/api/smartapps/installations/a1ac15f4-4af7-4694-bb37-447623696be7/command?access_token=2dbc2a7a-65b2-4647-ad6b-02413d09297d&dni=anbang_gonggiceongjeonggi&command=setAirPurifierMode&value=16
+//anbang_gonggiceongjeonggi[setAirPurifierMode] = 13
+//[setAirPurifierMode] = null
+//POST >>>> params:[value:13, command:setAirPurifierMode, dni:anbang_gonggiceongjeonggi, access_token:2dbc2a7a-65b2-4647-ad6b-02413d09297d, appId:a1ac15f4-4af7-4694-bb37-447623696be7, param1:command, action:[GET:executeSmartAppGet, POST:executeSmartAppPost, PUT:executeSmartAppPut, DELETE:executeSmartAppDelete, OPTIONS:executeSmartAppOptions], controller:smartAppApi]
+def stCommand() {
+	log.debug "[stCommand]params:${params}"
+	//params:[turn:on, attributes:switch, dni:anbang_gonggiceongjeonggi, ...]
+	def state = "${params.value}"
+	def command = params.command	// setAirPurifierMode, ...
+	def value = params.value		// 13, 14, 16, ...
+	log.debug "[stCommand] ${command} = ${params.value}"
+	if(settings["switch"]) {
+		settings["switch"].each { device ->
+			if(device.name == params.dni) {
+				log.debug "${device.name}[${command}] = ${value}"
+				if(value != null) {
+					device."$params.command"(value)
+				} else {
+					device."$params.command"()
+				}
+			}
+		}
+	}
+	render contentType: "text/html", data: state
+}
+
+def authError() {
+	[error: "Permission denied"]
+}
+
+def renderConfig() {
+	def configJson = new groovy.json.JsonOutput().toJson([
+		description: "HA-Services API",
+		platforms: [
+			[
+				platform: "SmartThings HA-Services",
+				name: "HA-Services",
+				app_url: apiServerUrl("/api/smartapps/installations/"),
+				app_id: app.id,
+				access_token:  state.accessToken
+			]
+		],
+	])
+	def configString = new groovy.json.JsonOutput().prettyPrint(configJson)
+	render contentType: "text/plain", data: configString
+}
+
+mappings {
+	if (!params.access_token || (params.access_token && params.access_token != state.accessToken)) {
+		path("/config")					{ action: [GET: "authError"] }
+		path("/update")					{ action: [GET: "authError"] }
+		path("/getSTDevices")			{ action: [GET: "authError"] }
+		path("/getHADevices")			{ action: [GET: "authError"] }
+		path("/get") {
+			action: [
+				GET: "authError",
+				POST: "authError"
+			]
+		}
+		path("/command") {
+			action: [
+				GET: "authError",
+				POST: "authError"
+			]
+		}
+	} else {
+		path("/config")					{ action: [GET: "renderConfig"] }
+		path("/update")				 	{ action: [GET: "updateDevice"] }
+		path("/getSTDevices")			{ action: [GET: "getSTDevices"] }
+		path("/getHADevices")			{ action: [GET: "getHADevices"] }
+		path("/get") {
+			action: [
+				GET: "getSTDevice",
+				POST: "updateSTDevice"
+			]
+		}
+		path("/command") {
+			action: [
+				GET: "stCommand",
+				POST: "stCommand"
+			]
+		}
+	}
+}

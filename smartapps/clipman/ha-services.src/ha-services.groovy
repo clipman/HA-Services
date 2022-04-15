@@ -247,7 +247,8 @@ def getHADevices() {
 	def haDevices = []
 	def childDevices = getAllChildDevices()
 	childDevices.each { childDevice->
-		haDevices.push(childDevice.deviceNetworkId.substring(13))
+		//haDevices.push(childDevice.deviceNetworkId.substring(13))
+		haDevices.push(childDevice.deviceNetworkId)
 	}
 	def deviceJson = new groovy.json.JsonOutput().toJson([list: haDevices])
 	render contentType: "application/json", data: deviceJson

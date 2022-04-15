@@ -87,21 +87,22 @@ def haAddDevicePage() {
 			friendly_name = ""
 		}
 		if(!addedDNIList.contains(entity_id)) {
-            if(settings.haDevice == null || settings.haDevice == "") {
+			if(settings.haDevice == null || settings.haDevice == "") {
 				if(entity_id.contains("light.") || entity_id.contains("switch.") || entity_id.contains("fan.") || entity_id.contains("cover.") || entity_id.contains("lock.") || entity_id.contains("vacuum.") || entity_id.contains("button.") || entity_id.contains("climate.") || entity_id.contains("media_player.") || entity_id.contains("input_boolean.") || entity_id.contains("input_button.") || entity_id.contains("script.") || entity_id.contains("rest_command.")) {
 					if(!entity_id.contains("_st")) {
-						list.push("${friendly_name} [ ${entity_id} ]")
+						list.push("${entity_id}[${friendly_name}]")
 					}
 				}
 			} else {
 				if(entity_id.contains(settings.haDevice) || friendly_name.contains(settings.haDevice)) {
 					if(!entity_id.contains("_st")) {
-						list.push("${friendly_name} [ ${entity_id} ]")
+						list.push("${entity_id}[${friendly_name}]")
 					}
 				}
 			}
 		}
 	}
+	list.sort()
 	dynamicPage(name: "haAddDevicePage", nextPage: "mainPage", title:"") {
 		section ("[HA -> ST] Add HA Devices") {
 			input(name: "selectedAddHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
@@ -146,7 +147,8 @@ def addHAChildDevice() {
 				try {
 					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
 					def childDevice = addChildDevice("clipman", dth, dni, "", ["label": name])
-					childDevice.setInit(settings.haURL, settings.haToken, haDevice.state)
+					//childDevice.setInit(settings.haURL, settings.haToken, haDevice.state)
+					childDevice.setInit("https://clipman.duckdns.org", settings.haToken, haDevice.state)
 				} catch(err) {
 					log.error "Add HA Device ERROR >> ${err}"
 				}
@@ -186,13 +188,13 @@ def dataCallback(physicalgraph.device.HubResponse hubResponse) {
 		msg = parseLanMessage(hubResponse.description)
 		status = msg.status
 		msg.json.each {
-            def entity_type = it.entity_id.split('\\.')[0]
-            if(entity_type != "sensor" && entity_type != "binary_sensor") {
-                //HA의 Entity Data가 많으면 에러가 발생하기 때문에 Data량을 최대한 줄임
-                def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
-                //def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: ""]]
-			    json.push(obj)
-            }
+			def entity_type = it.entity_id.split('\\.')[0]
+			if(entity_type != "sensor" && entity_type != "binary_sensor") {
+				//HA의 Entity Data가 많으면 에러가 발생하기 때문에 Data량을 최대한 줄임
+				def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+				//def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: ""]]
+				json.push(obj)
+			}
 		}
 		state.dataList = json
 		state.latestHttpResponse = status
@@ -216,9 +218,9 @@ def updateDevice() {
 		def device = getChildDevice(dni)
 		if(device) {
 			//log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
-            if (params.value != oldstate) {
-                device.setStatus(params.value)
-            }
+			if (params.value != oldstate) {
+				device.setStatus(params.value)
+			}
 		}
 	} catch(err) {
 		log.error "${err}"
@@ -280,11 +282,11 @@ mappings {
 		path("/config")	{ action: [GET: "authError"] }
 		path("/update")	{ action: [GET: "authError"] }
 		path("/getHADevices") { action: [GET: "authError"] }
-		path("/get")    { action: [POST: "authError"] }
+		path("/get")	{ action: [POST: "authError"] }
 	} else {
 		path("/config")	{ action: [GET: "renderConfig"] }
 		path("/update")	{ action: [GET: "updateDevice"] }
 		path("/getHADevices") { action: [GET: "getHADevices"] }
-		path("/get")    { action: [POST: "updateSTDevice"] }
+		path("/get")	{ action: [POST: "updateSTDevice"] }
 	}
 }

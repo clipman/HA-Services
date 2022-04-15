@@ -1,0 +1,10 @@
+{
+  "domain": "ha_services",
+  "name": "HA-Services",
+  "documentation": "https://github.com/clipman/HA-Services",
+  "dependencies": [],
+  "codeowners": ["@clipman"],
+  "requirements": [],
+  "config_flow": true,
+  "version": "2022.04.16"
+}

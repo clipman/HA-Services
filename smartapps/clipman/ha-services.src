@@ -23,7 +23,7 @@ definition(
 	author: "clipman",
 	description: "Home Assistant Services Call",
 	category: "My Apps",
-	iconUrl: "https://github.com/home-assistant/assets/blob/master/logo/logo-small.png?raw=true"
+	iconUrl: "https://github.com/home-assistant/assets/blob/master/logo/logo-small.png?raw=true",
 	iconX2Url: "https://github.com/home-assistant/assets/blob/master/logo/logo-small.png?raw=true",
 	iconX3Url: "https://github.com/home-assistant/assets/blob/master/logo/logo-small.png?raw=true",
 	oauth: true

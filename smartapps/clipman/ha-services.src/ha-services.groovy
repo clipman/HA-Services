@@ -367,7 +367,7 @@ def updateDevice() {
 					default:	//switch, light, fan, input_boolean, ...
 						break;
 				}
-				device.setStatus(onOff)
+				device.setStatus(onOff)	// 상태만 반영함(sendEvent())
 			}
 		}
 	} catch(err) {

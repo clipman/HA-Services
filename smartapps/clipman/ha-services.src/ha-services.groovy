@@ -150,6 +150,7 @@ def updated() {
 def initialize() {
 	deleteChildDevice()
 	addHAChildDevice()
+	refreshRegisteredHADeviceList()
 }
 
 def deleteChildDevice() {
@@ -193,6 +194,41 @@ def addHAChildDevice() {
 				}
 			}
 		}
+	}
+}
+
+/*
+def refreshRegisteredHADeviceList() {
+	def options = [
+		"method": "POST",
+		"path": "/api/services/ha_connector/refresh",
+		"headers": [
+			"HOST": settings.haAddress,
+			"Authorization": "Bearer ${settings.haPassword}",
+			"Content-Type": "application/json"
+		],
+		"body": []
+	]
+
+	def myhubAction = new physicalgraph.device.HubAction(options, null, [callback: null])
+	sendHubCommand(myhubAction)
+}
+*/
+def refreshRegisteredHADeviceList() {
+	def service = "/api/services/ha_services/refresh"
+	def params = [
+		uri: haURL,
+		path: service,
+		headers: ["Authorization": "Bearer " + haToken],
+		requestContentType: "application/json"
+	]
+	try {
+		httpPost(params) { resp ->
+			return true
+		}
+	} catch (e) {
+		log.error "HomeAssistant Services Error: $e"
+		return false
 	}
 }
 

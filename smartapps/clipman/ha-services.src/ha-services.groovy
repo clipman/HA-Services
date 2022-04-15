@@ -1,5 +1,5 @@
 /**
- *  HA-Services v2022-04-15
+ *  HA-Services v2022-04-16
  *  clipman@naver.com
  *  날자
  *
@@ -30,21 +30,25 @@ definition(
 )
 
 preferences {
-   page(name: "mainPage")
-   page(name: "haDevicePage")
-   page(name: "haAddDevicePage")
+	page(name: "mainPage")
+	page(name: "haDevicePage")
+	page(name: "haAddDevicePage")
+	page(name: "haDeleteDevicePage")
 }
 
 def mainPage() {
 	dynamicPage(name: "mainPage", title: "", nextPage: null, uninstall: true, install: true) {
 		section("Configure Home Assistant API") {
-		   input "haURL", "text", title: "HomeAssistant external URL(ex, https://xxx.duckdns.org)", required: true
-		   input "haToken", "text", title: "HomeAssistant Token", required: true
+			input "haURL", "text", title: "HomeAssistant external URL(ex, https://xxx.duckdns.org)", required: true
+			input "haToken", "text", title: "HomeAssistant Token", required: true
 		}
 		section("[HA -> ST]") {
-		   href "haDevicePage", title: "Get HA Devices", description:""
-		   input "haDevice", "text", title: "Filter", required: false
-		   href "haAddDevicePage", title: "Add HA Device", description:""
+			href "haDevicePage", title: "Get HA Devices", description:""
+			input "haDeviceFilter", "text", title: "Filter", required: false
+			href "haAddDevicePage", title: "Add HA Device", description:""
+		}
+		section("[HA -> ST] Delete") {
+			href "haDeleteDevicePage", title: "Delete HA Device", description:""
 		}
 		section() {
 			paragraph "View this SmartApp's configuration to use it in other places."
@@ -87,16 +91,16 @@ def haAddDevicePage() {
 			friendly_name = ""
 		}
 		if(!addedDNIList.contains(entity_id)) {
-			if(settings.haDevice == null || settings.haDevice == "") {
+			if(settings.haDeviceFilter == null || settings.haDeviceFilter == "") {
 				if(entity_id.contains("light.") || entity_id.contains("switch.") || entity_id.contains("fan.") || entity_id.contains("cover.") || entity_id.contains("lock.") || entity_id.contains("vacuum.") || entity_id.contains("button.") || entity_id.contains("climate.") || entity_id.contains("media_player.") || entity_id.contains("input_boolean.") || entity_id.contains("input_button.") || entity_id.contains("script.") || entity_id.contains("rest_command.")) {
 					if(!entity_id.contains("_st")) {
-						list.push("${entity_id}[${friendly_name}]")
+						list.push("${entity_id} [${friendly_name}]")
 					}
 				}
 			} else {
-				if(entity_id.contains(settings.haDevice) || friendly_name.contains(settings.haDevice)) {
+				if(entity_id.contains(settings.haDeviceFilter) || friendly_name.contains(settings.haDeviceFilter)) {
 					if(!entity_id.contains("_st")) {
-						list.push("${entity_id}[${friendly_name}]")
+						list.push("${entity_id} [${friendly_name}]")
 					}
 				}
 			}
@@ -104,11 +108,27 @@ def haAddDevicePage() {
 	}
 	list.sort()
 	dynamicPage(name: "haAddDevicePage", nextPage: "mainPage", title:"") {
-		section ("[HA -> ST] Add HA Devices") {
+		section ("[HA -> ST] Add HA Device") {
 			input(name: "selectedAddHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
 		}
+		section ("Device Name") {
+			input(name: "haAddName", title: "Name", type: "text", required: false, value: "")
+		}
 	}
+}
 
+def haDeleteDevicePage() {
+	def list = []
+	list.push("None")
+	def childDevices = getAllChildDevices()
+	childDevices.each { childDevice->
+		list.push(childDevice.label + " -> " + childDevice.deviceNetworkId)
+	}
+	dynamicPage(name: "haDeleteDevicePage", nextPage: "mainPage", title:"") {
+		section ("[HA -> ST] Delete HA Device") {
+			input(name: "selectedDeleteHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
+		}
+	}
 }
 
 def installed() {
@@ -117,38 +137,59 @@ def installed() {
 		createAccessToken()
 	}
 	app.updateSetting("selectedAddHADevice", "None")
+	app.updateSetting("selectedDeleteHADevice", "None")
+	app.updateSetting("haAddName", "")
 }
 
 def updated() {
 	log.info "Updated with settings: ${settings}"
 	initialize()
 	app.updateSetting("selectedAddHADevice", "None")
+	app.updateSetting("selectedDeleteHADevice", "None")
+	app.updateSetting("haAddName", "")
 }
 
 def initialize() {
+	deleteChildDevice()
 	addHAChildDevice()
+}
+
+def deleteChildDevice() {
+	if(settings.selectedDeleteHADevice) {
+		if(settings.selectedDeleteHADevice != "None") {
+			//log.debug "DELETE >> " + settings.selectedDeleteHADevice
+			def nameAndDni = settings.selectedDeleteHADevice.split(" -> ")
+			try {
+				deleteChildDevice(nameAndDni[1])
+			} catch(err) {
+				//
+			}
+		}
+	}
 }
 
 def addHAChildDevice() {
 	if(settings.selectedAddHADevice) {
 		if(settings.selectedAddHADevice != "None") {
 			//log.debug "ADD >> " + settings.selectedAddHADevice
-			def tmp = settings.selectedAddHADevice.split(" \\[ ")
-			def tmp2 = tmp[1].split(" \\]")
-			def entity_id = tmp2[0]
+			//list.push("${entity_id} [${friendly_name}]")
+			def tmp = settings.selectedAddHADevice.split(" \\[")
+			def entity_id = tmp[0]
 			def dni = entity_id
 			def haDevice = getHADeviceByEntityId(entity_id)
 			if(haDevice) {
 				def dth = "HomeAssistant Services"
-				def name = haDevice.attributes.friendly_name
+				def name = haAddName
 				if(!name) {
-					name = entity_id
+					name = haDevice.attributes.friendly_name
+					if(!name) {
+						name = entity_id
+					}
 				}
 				try {
 					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
 					def childDevice = addChildDevice("clipman", dth, dni, "", ["label": name])
-					//childDevice.setInit(settings.haURL, settings.haToken, haDevice.state)
-					childDevice.setInit("https://clipman.duckdns.org", settings.haToken, haDevice.state)
+					childDevice.setStatus(haDevice.state)
 				} catch(err) {
 					log.error "Add HA Device ERROR >> ${err}"
 				}
@@ -167,12 +208,13 @@ def getHADeviceByEntityId(entity_id) {
 	target
 }
 
+/*
 def getDataList() {
 	def options = [
 		"method": "GET",
 		"path": "/api/states",
 		"headers": [
-			"HOST": settings.haURL,
+			"HOST": "192.168.219.130:8123",
 			"Authorization": "Bearer ${settings.haToken}",
 			"Content-Type": "application/json"
 		]
@@ -187,12 +229,13 @@ def dataCallback(physicalgraph.device.HubResponse hubResponse) {
 	try {
 		msg = parseLanMessage(hubResponse.description)
 		status = msg.status
+		log.info "msg: ${msg}"
 		msg.json.each {
 			def entity_type = it.entity_id.split('\\.')[0]
 			if(entity_type != "sensor" && entity_type != "binary_sensor") {
 				//HA의 Entity Data가 많으면 에러가 발생하기 때문에 Data량을 최대한 줄임
-				def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
-				//def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: ""]]
+				//def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+				def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
 				json.push(obj)
 			}
 		}
@@ -200,6 +243,42 @@ def dataCallback(physicalgraph.device.HubResponse hubResponse) {
 		state.latestHttpResponse = status
 	} catch (e) {
 		log.warn "Exception caught while parsing data: "+e
+	}
+}
+*/
+
+def getDataList() {
+	def service = "/api/states"
+	def params = [
+        uri: haURL,
+        path: service,
+        headers: ["Authorization": "Bearer " + haToken],
+        requestContentType: "application/json"
+    ]
+	def switchEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command", "esphome",
+						"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
+	def json = []
+	try {
+		httpGet(params) { resp ->
+			resp.headers.each {
+				//log.debug "${it.name} : ${it.value}"
+			}
+			if (resp.status == 200) {
+				//log.debug "resp.data: ${resp.data}"
+				resp.data.each {
+					def entity_type = it.entity_id.split('\\.')[0]
+					if(switchEntity.contains(entity_type)) {
+						def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+						json.push(obj)
+					}
+				}
+				state.dataList = json
+			}
+			state.latestHttpResponse = resp.status
+		}
+	} catch (e) {
+		state.latestHttpResponse = 401
+		log.error "HomeAssistant Services Error: $e"
 	}
 }
 
@@ -249,7 +328,6 @@ def getHADevices() {
 	def haDevices = []
 	def childDevices = getAllChildDevices()
 	childDevices.each { childDevice->
-		//haDevices.push(childDevice.deviceNetworkId.substring(13))
 		haDevices.push(childDevice.deviceNetworkId)
 	}
 	def deviceJson = new groovy.json.JsonOutput().toJson([list: haDevices])
@@ -269,7 +347,7 @@ def renderConfig() {
 				name: "HA-Services",
 				app_url: apiServerUrl("/api/smartapps/installations/"),
 				app_id: app.id,
-				access_token:  state.accessToken
+				access_token: state.accessToken
 			]
 		],
 	])

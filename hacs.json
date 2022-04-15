@@ -1,0 +1,6 @@
+{
+  "name": "[KR] HA-Services",
+  "country": "KR",
+  "domains": ["ha_services"],
+  "render_readme": true
+}

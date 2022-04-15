@@ -1,5 +1,5 @@
 /**
- *  HA-Services v2022-04-16
+ *  HA-Services v2022-04-15
  *  clipman@naver.com
  *  날자
  *
@@ -91,11 +91,9 @@ def haAddDevicePage() {
 			friendly_name = ""
 		}
 		if(!addedDNIList.contains(entity_id)) {
-			if(settings.haDeviceFilter == null || settings.haDeviceFilter == "") {
-				if(entity_id.contains("light.") || entity_id.contains("switch.") || entity_id.contains("fan.") || entity_id.contains("cover.") || entity_id.contains("lock.") || entity_id.contains("vacuum.") || entity_id.contains("button.") || entity_id.contains("climate.") || entity_id.contains("media_player.") || entity_id.contains("input_boolean.") || entity_id.contains("input_button.") || entity_id.contains("script.") || entity_id.contains("rest_command.")) {
-					if(!entity_id.contains("_st")) {
-						list.push("${entity_id} [${friendly_name}]")
-					}
+			if(!settings.haDeviceFilter) {
+				if(!entity_id.contains("_st")) {
+					list.push("${entity_id} [${friendly_name}]")
 				}
 			} else {
 				if(entity_id.contains(settings.haDeviceFilter) || friendly_name.contains(settings.haDeviceFilter)) {
@@ -112,7 +110,7 @@ def haAddDevicePage() {
 			input(name: "selectedAddHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
 		}
 		section ("Device Name") {
-			input(name: "haAddName", title: "Name", type: "text", required: false, value: "")
+			input(name: "haAddName", title: "Name (optional)", type: "text", required: false, description: "Rename selected device", value: "")
 		}
 	}
 }
@@ -122,7 +120,7 @@ def haDeleteDevicePage() {
 	list.push("None")
 	def childDevices = getAllChildDevices()
 	childDevices.each { childDevice->
-		list.push(childDevice.label + " -> " + childDevice.deviceNetworkId)
+		list.push(childDevice.deviceNetworkId + " [" + childDevice.label + "]")
 	}
 	dynamicPage(name: "haDeleteDevicePage", nextPage: "mainPage", title:"") {
 		section ("[HA -> ST] Delete HA Device") {
@@ -158,9 +156,9 @@ def deleteChildDevice() {
 	if(settings.selectedDeleteHADevice) {
 		if(settings.selectedDeleteHADevice != "None") {
 			//log.debug "DELETE >> " + settings.selectedDeleteHADevice
-			def nameAndDni = settings.selectedDeleteHADevice.split(" -> ")
+			def nameAndDni = settings.selectedDeleteHADevice.split(" \\[")
 			try {
-				deleteChildDevice(nameAndDni[1])
+				deleteChildDevice(nameAndDni[0])
 			} catch(err) {
 				//
 			}

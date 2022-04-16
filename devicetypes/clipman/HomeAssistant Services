@@ -1,5 +1,5 @@
 /**
- *  HomeAssistant Services v2022-04-16
+ *  HomeAssistant Services v2022-04-17
  *  clipman@naver.com
  *  날자
  *
@@ -24,7 +24,7 @@ metadata {
 		input name: "haToken", type: "text", title: "HomeAssistant Token", required: false
 
 		input type: "paragraph", element: "paragraph", title: "만든이", description: "김민수 clipman@naver.com [날자]", displayDuringSetup: false
-		input type: "paragraph", element: "paragraph", title: "HomeAssistant Services v2022-04-16", description: "", displayDuringSetup: false
+		input type: "paragraph", element: "paragraph", title: "HomeAssistant Services v2022-04-17", description: "", displayDuringSetup: false
 	}
 }
 

@@ -21,7 +21,7 @@ metadata {
 		capability "Battery"
 		capability "Refresh"
 		capability "circlecircle06391.vacuum"
-		capability "circlecircle06391.status"     	// statusbar
+		capability "circlecircle06391.status"	 	// statusbar
 		capability "circlecircle06391.cleanstart"
 		capability "circlecircle06391.cleanstop"
 		capability "circlecircle06391.cleanedarea"
@@ -98,31 +98,31 @@ def control(onOff) {
 			if(onOff == "on") {
 				services("/api/services/script/" + entity_name, [])
 			}
-      onOff = "off"
+	        onOff = "off"
 			break;
 		case "rest_command":
 			if(onOff == "on") {
 				services("/api/services/rest_command/" + entity_name, [])
 			}
-      onOff = "off"
+	        onOff = "off"
 			break;
 		case "esphome":
 			if(onOff == "on") {
 				services("/api/services/esphome/" + entity_name, [])
 			}
-      onOff = "off"
+	        onOff = "off"
 			break;
 		case "button":
 			if(onOff == "on") {
 				services("/api/services/button/press", ["entity_id": entity_id])
 			}
-      onOff = "off"
+	        onOff = "off"
 			break;
 		case "input_button":
 			if(onOff == "on") {
 				services("/api/services/input_button/press", ["entity_id": entity_id])
 			}
-      onOff = "off"
+	        onOff = "off"
 			break;
 		default:	//switch, light, climate, fan, input_boolean, ...
 			services("/api/services/homeassistant/turn_" + onOff, ["entity_id": entity_id])
@@ -160,59 +160,59 @@ def services(service, data) {
 def setVacuum(mode){
 	log.debug "setVacuum '${mode}'"
 	switch(mode) {
-  	case "start":
-	  	start()
-		  break;
-  	case "stop":
-	  	stop()
-		  break;
-	  case "pause":
-		  pause()
-  		break;
-  	case "returnToHome":
-	  	returnToHome()
-		  break;
-  	case "cleanSpot":
-	  	cleanSpot()
-		  break;
-  	case "locate":
-	  	locate()
-		  break;
-  	default:
-	  	returnToHome()
-		  break;
+		case "start":
+	  	    start()
+		    break;
+		case "stop":
+	  	    stop()
+		    break;
+	    case "pause":
+		    pause()
+            break;
+		case "returnToHome":
+	  	    returnToHome()
+		    break;
+		case "cleanSpot":
+	  	    cleanSpot()
+		    break;
+		case "locate":
+	  	    locate()
+		    break;
+  	    default:
+	  	    returnToHome()
+		    break;
 	}
-    sendEvent(name: "vacuum", value: device.currentValue("vacuum"))
+	sendEvent(name: "vacuum", value: device.currentValue("vacuum"))
 }
 
 def start(){
-  services("/api/services/vacuum/start", ["entity_id": device.deviceNetworkId])
+	services("/api/services/vacuum/start", ["entity_id": device.deviceNetworkId])
 }
 
 def pause(){
-  services("/api/services/vacuum/pause", ["entity_id": device.deviceNetworkId])
+	services("/api/services/vacuum/pause", ["entity_id": device.deviceNetworkId])
 }
 
 def stop(){
-  services("/api/services/vacuum/stop", ["entity_id": device.deviceNetworkId])
+	services("/api/services/vacuum/stop", ["entity_id": device.deviceNetworkId])
 }
 
 def locate(){
-  services("/api/services/vacuum/locate", ["entity_id": device.deviceNetworkId])
+	services("/api/services/vacuum/locate", ["entity_id": device.deviceNetworkId])
 }
 
 def returnToHome(){
-  services("/api/services/vacuum/return_to_base", ["entity_id": device.deviceNetworkId])
+	services("/api/services/vacuum/return_to_base", ["entity_id": device.deviceNetworkId])
 }
 
 def cleanSpot(){
-  services("/api/services/vacuum/clean_spot", ["entity_id": device.deviceNetworkId])
+	services("/api/services/vacuum/clean_spot", ["entity_id": device.deviceNetworkId])
 }
 
 def setFanSpeed(speed){
 	//log.debug "setFanSpeed >> ${speed}"
 	//Silent, Standard, Medium, Turbo
-  services("/api/services/fan/set_fan_speed", [ "entity_id": state.entity_id, "fan_speed":speed ])
+	services("/api/services/fan/set_fan_speed", [ "entity_id": state.entity_id, "fan_speed":speed ])
 	sendEvent(name: "cleanfanspeed", value: speed, unit: "")
 }
 
@@ -259,7 +259,7 @@ def getSensorState(entity_id){
 					def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
 					json.push(obj)
 				}
-        setVacuumStatus(json.entity_id, json.state, json.attributes)
+		        setVacuumStatus(json.entity_id, json.state, json.attributes)
 			}
 		}
 	} catch (e) {
@@ -304,9 +304,9 @@ def setVacuumStatus(entity_id, state, attributes){
 		sendEvent(name: "sensordirtyleft", value: (state as int)/3600, unit: "시간")
 		break;
 	default:
-	  sendEvent(name: "statusbar", value: attributes.status+"("+jsonObj.state+")", unit: "")
-	  sendEvent(name: "battery_level", value: attributes.battery_level, unit: "%")
-	  sendEvent(name: "fan_speed", value: attributes.fan_speed, unit: "")
+	    sendEvent(name: "statusbar", value: attributes.status+"("+jsonObj.state+")", unit: "")
+	    sendEvent(name: "battery_level", value: attributes.battery_level, unit: "%")
+	    sendEvent(name: "fan_speed", value: attributes.fan_speed, unit: "")
 		break;
 	}
 }

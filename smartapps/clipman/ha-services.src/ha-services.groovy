@@ -1,5 +1,5 @@
 /**
- *  HA-Services v2022-04-15
+ *  HA-Services v2022-04-17
  *  clipman@naver.com
  *  날자
  *
@@ -39,7 +39,8 @@ preferences {
 def mainPage() {
 	dynamicPage(name: "mainPage", title: "", nextPage: null, uninstall: true, install: true) {
 		section("Configure Home Assistant API") {
-			input "haURL", "text", title: "HomeAssistant external URL(ex, https://xxx.duckdns.org)", required: true
+			paragraph "Home Assistant 외부접속 URL, https://xxx.duckdns.org 또는 http://xxx.duckdns.org:8123"
+			input "haURL", "text", title: "HomeAssistant external URL", required: true
 			input "haToken", "text", title: "HomeAssistant Token", required: true
 		}
 		section("[HA -> ST]") {

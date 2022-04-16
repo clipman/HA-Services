@@ -1,5 +1,5 @@
 /**
- *  HomeAssistant Services v2022-04-16
+ *  HomeAssistant Services v2022-04-17
  *  clipman@naver.com
  *  날자
  *
@@ -20,11 +20,8 @@ metadata {
 		capability "Refresh"
 	}
 	preferences {
-		input name: "haURL", type: "text", title:"HomeAssistant external URL(ex, https://xxx.duckdns.org)", required: false
-		input name: "haToken", type: "text", title: "HomeAssistant Token", required: false
-
 		input type: "paragraph", element: "paragraph", title: "만든이", description: "김민수 clipman@naver.com [날자]<br>네이버카페: Smartthings & IoT home Community", displayDuringSetup: false
-		input type: "paragraph", element: "paragraph", title: "HomeAssistant Services v2022-04-16", description: "", displayDuringSetup: false
+		input type: "paragraph", element: "paragraph", title: "HomeAssistant Services v2022-04-17", description: "", displayDuringSetup: false
 	}
 }
 
@@ -41,7 +38,6 @@ def off() {
 }
 
 def installed() {
-	//sendEvent(name: "switch", value: "off")
 }
 
 def refresh() {
@@ -112,17 +108,10 @@ def control(onOff) {
 }
 
 def services(service, data) {
-	if(!settings.haURL) {
-		settings.haURL = parent.settings.haURL
-	}
-	if(!settings.haToken) {
-		settings.haToken = parent.settings.haToken
-	}
-
 	def params = [
-		uri: settings.haURL,
+		uri: parent.settings.haURL,
 		path: service,
-		headers: ["Authorization": "Bearer " + settings.haToken],
+		headers: ["Authorization": "Bearer " + parent.settings.haToken],
 		requestContentType: "application/json",
 		body: data
 	]

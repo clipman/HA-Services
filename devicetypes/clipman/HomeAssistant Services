@@ -120,9 +120,9 @@ def services(service, data) {
 	}
 
 	def params = [
-		uri: haURL,
+		uri: settings.haURL,
 		path: service,
-		headers: ["Authorization": "Bearer " + haToken],
+		headers: ["Authorization": "Bearer " + settings.haToken],
 		requestContentType: "application/json",
 		body: data
 	]

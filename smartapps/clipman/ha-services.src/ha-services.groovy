@@ -21,50 +21,82 @@ definition(
 	name: "HA-Services",
 	namespace: "clipman",
 	author: "clipman",
-	description: "Home Assistant Services Call",
+	description: "HomeAssistant의 장치/센서들을 Smartthing로 가져오고 서비스를 호출합니다.",
 	category: "My Apps",
-	iconUrl: "https://github.com/home-assistant/assets/blob/master/logo/logo-small.png?raw=true",
-	iconX2Url: "https://github.com/home-assistant/assets/blob/master/logo/logo-small.png?raw=true",
-	iconX3Url: "https://github.com/home-assistant/assets/blob/master/logo/logo-small.png?raw=true",
+	iconUrl: "https://brands.home-assistant.io/_/ha_services/icon.png",
+	iconX2Url: "https://brands.home-assistant.io/_/ha_services/icon.png",
+	iconX3Url: "https://brands.home-assistant.io/_/ha_services/icon.png",
 	oauth: true
 )
 
 preferences {
 	page(name: "mainPage")
-	page(name: "haDevicePage")
+	page(name: "haEntityPage")
 	page(name: "haAddDevicePage")
-	page(name: "haDeleteDevicePage")
+	page(name: "haAddSensorPage")
+	page(name: "haDeletePage")
 }
 
 def mainPage() {
 	dynamicPage(name: "mainPage", title: "", nextPage: null, uninstall: true, install: true) {
-		section("Configure Home Assistant API") {
-			paragraph "Home Assistant 외부접속 URL, https://xxx.duckdns.org 또는 http://xxx.duckdns.org:8123"
-			input "haURL", "text", title: "HomeAssistant external URL", required: true
+		section("HomeAssistant 연결 설정") {
+			paragraph "https://xxx.duckdns.org 또는 http://xxx.duckdns.org:8123"
+			input "haURL", "text", title: "HomeAssistant URL", required: true
 			input "haToken", "text", title: "HomeAssistant Token", required: true
 		}
-		section("[HA -> ST]") {
-			href "haDevicePage", title: "Get HA Devices", description:""
-			input "haDeviceFilter", "text", title: "Filter", required: false
-			href "haAddDevicePage", title: "Add HA Device", description:""
+		section("[HA -> ST] 장치/센서 가져오기") {
+			href "haEntityPage", title: "가능한 HA 장치/센서들을 읽어오기"
+			input "haDeviceFilter", "text", title: "추가할 장치/센서를 선택하기 쉽게 필터처리 (선택사항)", required: false
+			href "haAddDevicePage", title: "추가할 장치 선택"
+			href "haAddSensorPage", title: "추가할 센서 선택"
 		}
-		section("[HA -> ST] Delete") {
-			href "haDeleteDevicePage", title: "Delete HA Device", description:""
+		section("[HA -> ST] 장치/센서 삭제") {
+			href "haDeletePage", title: "삭제할 장치/센서 선택"
 		}
 		section() {
-			paragraph "View this SmartApp's configuration to use it in other places."
-			href url:"${apiServerUrl("/api/smartapps/installations/${app.id}/config?access_token=${state.accessToken}")}", style:"embedded", required:false, title:"Config", description:"Tap, select, copy, then click \"Done\""
-			label title: "App Label (optional)", description: "Rename this App", defaultValue: app?.name, required: false
+			href url:"${apiServerUrl("/api/smartapps/installations/${app.id}/config?access_token=${state.accessToken}")}", style:"embedded", required:false, title:"HomeAssistant 설정 정보 읽어오기", description:"누르고 선택하고 복사한 후에 \"완료\"를 누르세요."
+		}
+		section() {
+			label title: "앱의 이름 변경 (선택사항)", description: "앱의 이름을 바꿀 수 있어요", defaultValue: app?.name, required: false
 		}
 	}
 }
 
+/*
 def haDevicePage() {
-	//log.debug "Executing haDevicePage"
-	getDataList()
+	getDeviceList()
+	dynamicPage(name: "haDevicePage", title:"[HA -> ST] 장치 가져오기", refreshInterval:5) {
+		section("추가 가능한 HA 장치들을 읽어옵니다.") {
+			if(state.latestHttpResponse) {
+				if(state.latestHttpResponse == 200) {
+					paragraph "Connected \nOK: 200"
+				} else {
+					paragraph "Connection error \nHTTP response code: " + state.latestHttpResponse
+				}
+			}
+		}
+	}
+}
 
-	dynamicPage(name: "haDevicePage", title:"[HA -> ST] Get HA Devices", refreshInterval:5) {
-		section("Please wait for the API to answer, this might take a couple of seconds.") {
+def haSensorPage() {
+	getSensorList()
+	dynamicPage(name: "haSensorPage", title:"[HA -> ST] 센서 가져오기", refreshInterval:5) {
+		section("추가 가능한 HA 센서들을 읽어옵니다.") {
+			if(state.latestHttpResponse) {
+				if(state.latestHttpResponse == 200) {
+					paragraph "Connected \nOK: 200"
+				} else {
+					paragraph "Connection error \nHTTP response code: " + state.latestHttpResponse
+				}
+			}
+		}
+	}
+}
+*/
+def haEntityPage() {
+	getEntityList()
+	dynamicPage(name: "haEntityPage", title:"[HA -> ST] 장치/센서 가져오기", refreshInterval:5) {
+		section("추가 가능한 HA 장치/센서들을 읽어옵니다.") {
 			if(state.latestHttpResponse) {
 				if(state.latestHttpResponse == 200) {
 					paragraph "Connected \nOK: 200"
@@ -85,13 +117,15 @@ def haAddDevicePage() {
 
 	def list = []
 	list.push("None")
-	state.dataList.each {
-		def entity_id = "${it.entity_id}"
-		def friendly_name = "${it.attributes.friendly_name}"
-		if(friendly_name == null) {
-			friendly_name = ""
-		}
-		if(!addedDNIList.contains(entity_id)) {
+	state.dataDeviceList.each {
+		//def entity_id = "${it.entity_id}"
+		def entity_id = "${it.id}"
+		//def friendly_name = "${it.friendly_name}"
+		//if(friendly_name == null) {
+		//	friendly_name = ""
+		//}
+		def friendly_name = ""
+		if(!existEntityInList(addedDNIList, entity_id)) {
 			if(!settings.haDeviceFilter) {
 				if(!entity_id.contains("_st")) {
 					list.push("${entity_id} [${friendly_name}]")
@@ -107,24 +141,76 @@ def haAddDevicePage() {
 	}
 	list.sort()
 	dynamicPage(name: "haAddDevicePage", nextPage: "mainPage", title:"") {
-		section ("[HA -> ST] Add HA Device") {
+		section ("[HA -> ST] 장치 가져오기") {
 			input(name: "selectedAddHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
 		}
-		section ("Device Name") {
-			input(name: "haAddName", title: "Name (optional)", type: "text", required: false, description: "Rename selected device", value: "")
+		section ("장치 이름") {
+			input(name: "haAddName", title: "이름 (선택사항)", type: "text", required: false, description: "선택한 장치의 이름을 바꿀 수 있어요", value: "")
 		}
 	}
 }
 
-def haDeleteDevicePage() {
+def haAddSensorPage() {
+	def addedDNIList = []
+	def childDevices = getAllChildDevices()
+	childDevices.each { childDevice->
+		addedDNIList.push(childDevice.deviceNetworkId)
+	}
+
+	def list = []
+	list.push("None")
+	state.dataSensorList.each {
+		//def entity_id = "${it.entity_id}"
+		def entity_id = "${it.id}"
+		//def friendly_name = "${it.friendly_name}"
+		//if(friendly_name == null) {
+		//	friendly_name = ""
+		//}
+		def friendly_name = ""
+		if(!existEntityInList(addedDNIList, entity_id)) {
+			if(!settings.haDeviceFilter) {
+				if(!entity_id.contains("_st")) {
+					list.push("${entity_id} [${friendly_name}]")
+				}
+			} else {
+				if(entity_id.contains(settings.haDeviceFilter) || friendly_name.contains(settings.haDeviceFilter)) {
+					if(!entity_id.contains("_st")) {
+						list.push("${entity_id} [${friendly_name}]")
+					}
+				}
+			}
+		}
+	}
+	list.sort()
+	dynamicPage(name: "haAddSensorPage", nextPage: "mainPage", title:"") {
+		section ("[HA -> ST] 센서 가져오기") {
+			input(name: "selectedAddHASensor", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
+		}
+		section ("센서 이름") {
+			input(name: "haAddSensorName", title: "이름 (선택사항)", type: "text", required: false, description: "선택한 센서의 이름을 바꿀 수 있어요", value: "")
+		}
+	}
+}
+
+//addedDNIList.contains(entity_id), 이게 잘 안되어서
+def existEntityInList(list, entity_id) {
+	for (item in list) {
+		if(item == entity_id) {
+			return true
+		}
+	}
+	return false
+}
+
+def haDeletePage() {
 	def list = []
 	list.push("None")
 	def childDevices = getAllChildDevices()
 	childDevices.each { childDevice->
 		list.push(childDevice.deviceNetworkId + " [" + childDevice.label + "]")
 	}
-	dynamicPage(name: "haDeleteDevicePage", nextPage: "mainPage", title:"") {
-		section ("[HA -> ST] Delete HA Device") {
+	dynamicPage(name: "haDeletePage", nextPage: "mainPage", title:"") {
+		section ("[HA -> ST] 장치/센서 삭제") {
 			input(name: "selectedDeleteHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
 		}
 	}
@@ -136,21 +222,26 @@ def installed() {
 		createAccessToken()
 	}
 	app.updateSetting("selectedAddHADevice", "None")
+	app.updateSetting("selectedAddHASensor", "None")
 	app.updateSetting("selectedDeleteHADevice", "None")
 	app.updateSetting("haAddName", "")
+	app.updateSetting("haAddSensorName", "")
 }
 
 def updated() {
 	log.info "Updated with settings: ${settings}"
 	initialize()
 	app.updateSetting("selectedAddHADevice", "None")
+	app.updateSetting("selectedAddHASensor", "None")
 	app.updateSetting("selectedDeleteHADevice", "None")
 	app.updateSetting("haAddName", "")
+	app.updateSetting("haAddSensorName", "")
 }
 
 def initialize() {
 	deleteChildDevice()
 	addHAChildDevice()
+	addHAChildSensor()
 	refreshRegisteredHADeviceList()
 }
 
@@ -178,20 +269,50 @@ def addHAChildDevice() {
 			def dni = entity_id
 			def haDevice = getHADeviceByEntityId(entity_id)
 			if(haDevice) {
-				def dth = "HomeAssistant Services"
+				def dth = "HomeAssistant Devices"
 				def name = haAddName
 				if(!name) {
-					name = haDevice.attributes.friendly_name
+					//name = haDevice.friendly_name
 					if(!name) {
 						name = entity_id
 					}
 				}
 				try {
 					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
-					def childDevice = addChildDevice("clipman", dth, dni, "", ["label": name])
+					def childDevice = addChildDevice("clipman", dth, dni, "", ["name": name, "label": name])
 					childDevice.setStatus(haDevice.state)
 				} catch(err) {
 					log.error "Add HA Device ERROR >> ${err}"
+				}
+			}
+		}
+	}
+}
+
+def addHAChildSensor() {
+	if(settings.selectedAddHASensor) {
+		if(settings.selectedAddHASensor != "None") {
+			//log.debug "ADD >> " + settings.selectedAddHASensor
+			//list.push("${entity_id} [${friendly_name}]")
+			def tmp = settings.selectedAddHASensor.split(" \\[")
+			def entity_id = tmp[0]
+			def dni = entity_id
+			def haDevice = getHASensorByEntityId(entity_id)
+			if(haDevice) {
+				def dth = "HomeAssistant Sensors"
+				def name = haAddSensorName
+				if(!name) {
+					//name = haDevice.friendly_name
+					if(!name) {
+						name = entity_id
+					}
+				}
+				try {
+					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
+					def childDevice = addChildDevice("clipman", dth, dni, "", ["name": name, "label": name])
+					childDevice.setStatus(haDevice.state)
+				} catch(err) {
+					log.error "Add HA Sensor ERROR >> ${err}"
 				}
 			}
 		}
@@ -218,9 +339,9 @@ def refreshRegisteredHADeviceList() {
 def refreshRegisteredHADeviceList() {
 	def service = "/api/services/ha_services/refresh"
 	def params = [
-		uri: haURL,
+		uri: settings.haURL,
 		path: service,
-		headers: ["Authorization": "Bearer " + haToken],
+		headers: ["Authorization": "Bearer " + settings.haToken],
 		requestContentType: "application/json"
 	]
 	try {
@@ -235,12 +356,24 @@ def refreshRegisteredHADeviceList() {
 
 def getHADeviceByEntityId(entity_id) {
 	def target
-	state.dataList.each { haDevice ->
-		if(haDevice.entity_id == entity_id) {
+	state.dataDeviceList.each { haDevice ->
+		//if(haDevice.entity_id == entity_id) {
+		if(haDevice.id == entity_id) {
 			target = haDevice
 		}
 	}
-	target
+	return target
+}
+
+def getHASensorByEntityId(entity_id) {
+	def target
+	state.dataSensorList.each { haDevice ->
+		//if(haDevice.entity_id == entity_id) {
+		if(haDevice.id == entity_id) {
+			target = haDevice
+		}
+	}
+	return target
 }
 
 /*
@@ -274,20 +407,20 @@ def dataCallback(physicalgraph.device.HubResponse hubResponse) {
 				json.push(obj)
 			}
 		}
-		state.dataList = json
+		state.dataDeviceList = json
 		state.latestHttpResponse = status
 	} catch (e) {
 		log.warn "Exception caught while parsing data: "+e
 	}
 }
 */
-
-def getDataList() {
+/*
+def getDeviceList() {
 	def service = "/api/states"
 	def params = [
-		uri: haURL,
+		uri: settings.haURL,
 		path: service,
-		headers: ["Authorization": "Bearer " + haToken],
+		headers: ["Authorization": "Bearer " + settings.haToken],
 		requestContentType: "application/json"
 	]
 	def switchEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command", "esphome",
@@ -303,11 +436,103 @@ def getDataList() {
 				resp.data.each {
 					def entity_type = it.entity_id.split('\\.')[0]
 					if(switchEntity.contains(entity_type)) {
-						def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
+						//def obj = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
+						//def obj = [entity_id: "${it.entity_id}", friendly_name: ""]
+						def obj = [id: "${it.entity_id}"]
 						json.push(obj)
 					}
 				}
-				state.dataList = json
+				state.dataDeviceList = json
+			}
+			state.latestHttpResponse = resp.status
+		}
+	} catch (e) {
+		state.latestHttpResponse = 401
+		log.error "HomeAssistant Services Error: $e"
+	}
+}
+
+def getSensorList() {
+	def service = "/api/states"
+	def params = [
+		uri: settings.haURL,
+		path: service,
+		headers: ["Authorization": "Bearer " + settings.haToken],
+		requestContentType: "application/json"
+	]
+	def sensorEntity = ["sensor", "binary_sensor"]
+	def json = []
+	try {
+		httpGet(params) { resp ->
+			resp.headers.each {
+				//log.debug "${it.name} : ${it.value}"
+			}
+			if (resp.status == 200) {
+				//log.debug "resp.data: ${resp.data}"
+				resp.data.each {
+					def entity_type = it.entity_id.split('\\.')[0]
+					if(sensorEntity.contains(entity_type)) {
+						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
+						//def obj = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
+						//def obj = [entity_id: "${it.entity_id}", friendly_name: ""]
+						def obj = [id: "${it.entity_id}"]
+						json.push(obj)
+					}
+				}
+				state.dataSensorList = json
+			}
+			state.latestHttpResponse = resp.status
+		}
+	} catch (e) {
+		state.latestHttpResponse = 401
+		log.error "HomeAssistant Services Error: $e"
+	}
+}
+*/
+
+def getEntityList() {
+	def service = "/api/states"
+	def params = [
+		uri: settings.haURL,
+		path: service,
+		headers: ["Authorization": "Bearer " + settings.haToken],
+		requestContentType: "application/json"
+	]
+	def switchEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command", "esphome",
+						"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
+	def sensorEntity = ["sensor", "binary_sensor"]
+	def jsonDevice = []
+	def jsonSensor = []
+	try {
+		httpGet(params) { resp ->
+			resp.headers.each {
+				//log.debug "${it.name} : ${it.value}"
+			}
+			if (resp.status == 200) {
+				//log.debug "resp.data: ${resp.data}"
+				resp.data.each {
+					def entity_type = it.entity_id.split('\\.')[0]
+					if(switchEntity.contains(entity_type)) {
+						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
+						//def obj = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
+						//def obj = [entity_id: "${it.entity_id}", friendly_name: ""]
+						def objDevice = [id: "${it.entity_id}"]
+						jsonDevice.push(objDevice)
+					}
+					if(sensorEntity.contains(entity_type)) {
+						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
+						//def obj = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
+						//def obj = [entity_id: "${it.entity_id}", friendly_name: ""]
+						def objSensor = [id: "${it.entity_id}"]
+						jsonSensor.push(objSensor)
+					}
+				}
+				state.dataDeviceList = jsonDevice
+				state.dataSensorList = jsonSensor
 			}
 			state.latestHttpResponse = resp.status
 		}
@@ -378,6 +603,46 @@ def updateDevice() {
 	render contentType: "application/json", data: deviceJson
 }
 
+def updateSensor() {
+	def dni = params.entity_id
+	def attr = null
+	def oldstate = null
+	try {
+		attr = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
+	} catch(err) {
+		//log.debug "${dni} attr decoding error : "+params.attr
+	}
+	oldstate = params?.old
+	try {
+		def device = getChildDevice(dni)
+		if(device) {
+			log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			if (params.value != oldstate) {
+				def entity_type = dni.split('\\.')[0]
+				def state = params.value
+                def unit = (params?.unit) ? " ${params.unit}" : ""
+				switch(entity_type) {
+					case "sensor":
+						state = params.value
+						break;
+					case "binary_sensor":
+						state = params.value
+						break;
+					default:
+						state = params.value
+						break;
+				}
+				device.setStatus(state + unit)	// 상태만 반영함(sendEvent())
+			}
+		}
+	} catch(err) {
+		log.error "${err}"
+	}
+	def deviceJson = new groovy.json.JsonOutput().toJson([result: true])
+	render contentType: "application/json", data: deviceJson
+}
+
+/*
 //HA->ST HA에서 변경한 Switch상태를 ST에 반영(on, off)
 def updateSTDevice() {
 	//log.debug "POST >>>> params:${params}"
@@ -393,6 +658,7 @@ def updateSTDevice() {
 	}
 	render contentType: "text/html", data: state
 }
+*/
 
 def getHADevices() {
 	def haDevices = []
@@ -408,6 +674,7 @@ def authError() {
 	[error: "Permission denied"]
 }
 
+/*
 def renderConfig() {
 	def configJson = new groovy.json.JsonOutput().toJson([
 		description: "HA-Services API",
@@ -424,17 +691,30 @@ def renderConfig() {
 	def configString = new groovy.json.JsonOutput().prettyPrint(configJson)
 	render contentType: "text/plain", data: configString
 }
+*/
+def renderConfig() {
+	def configJson = new groovy.json.JsonOutput().toJson([
+		name: "HA-Services",
+		app_url: apiServerUrl("/api/smartapps/installations/"),
+		app_id: app.id,
+		access_token: state.accessToken
+	])
+	def configString = new groovy.json.JsonOutput().prettyPrint(configJson)
+	render contentType: "text/plain", data: configString
+}
 
 mappings {
 	if (!params.access_token || (params.access_token && params.access_token != state.accessToken)) {
 		path("/config")	{ action: [GET: "authError"] }
-		path("/update")	{ action: [GET: "authError"] }
+		path("/device")	{ action: [GET: "authError"] }
+		path("/sensor")	{ action: [GET: "authError"] }
 		path("/getHADevices") { action: [GET: "authError"] }
-		path("/get")	{ action: [POST: "authError"] }
+		//path("/get")	{ action: [POST: "authError"] }
 	} else {
 		path("/config")	{ action: [GET: "renderConfig"] }
-		path("/update")	{ action: [GET: "updateDevice"] }
+		path("/device")	{ action: [GET: "updateDevice"] }
+		path("/sensor")	{ action: [GET: "updateSensor"] }
 		path("/getHADevices") { action: [GET: "getHADevices"] }
-		path("/get")	{ action: [POST: "updateSTDevice"] }
+		//path("/get")	{ action: [POST: "updateSTDevice"] }
 	}
 }

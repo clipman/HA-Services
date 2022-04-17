@@ -79,7 +79,7 @@ async def async_setup_entry(hass, config_entry):
 
         id  = newState.entity_id
         entity_type = id.split('.')[0]
-        if(entity_type=='sensor' or entity_type=='binary_sensor') {
+        if (entity_type=='sensor' or entity_type=='binary_sensor'):
             url = app_url + app_id + "/sensor?access_token=" + access_token + "&entity_id=" + id + "&value=" + newState.state
             try:
                 url += "&unit=" + newState.as_dict()['attributes']['unit_of_measurement']

@@ -1,5 +1,5 @@
 /**
- *  HA-Services v2022-04-17
+ *  HA-Services v2022-04-18
  *  clipman@naver.com
  *  날자
  *
@@ -32,8 +32,8 @@ definition(
 preferences {
 	page(name: "mainPage")
 	page(name: "haEntityPage")
-	page(name: "haAddDevicePage")
-	page(name: "haAddSensorPage")
+	page(name: "haDevicePage")
+	page(name: "haSensorPage")
 	page(name: "haDeletePage")
 }
 
@@ -46,9 +46,9 @@ def mainPage() {
 		}
 		section("[HA -> ST] 장치/센서 가져오기") {
 			href "haEntityPage", title: "가능한 HA 장치/센서들을 읽어오기"
-			input "haDeviceFilter", "text", title: "추가할 장치/센서를 선택하기 쉽게 필터처리 (선택사항)", required: false
-			href "haAddDevicePage", title: "추가할 장치 선택"
-			href "haAddSensorPage", title: "추가할 센서 선택"
+			input "haEntityFilter", "text", title: "추가할 장치/센서를 선택하기 쉽게 필터처리 (선택사항)", required: false
+			href "haDevicePage", title: "추가할 장치 선택"
+			href "haSensorPage", title: "추가할 센서 선택"
 		}
 		section("[HA -> ST] 장치/센서 삭제") {
 			href "haDeletePage", title: "삭제할 장치/센서 선택"
@@ -77,7 +77,7 @@ def haEntityPage() {
 	}
 }
 
-def haAddDevicePage() {
+def haDevicePage() {
 	def addedDNIList = []
 	def childDevices = getAllChildDevices()
 	childDevices.each { childDevice->
@@ -95,12 +95,12 @@ def haAddDevicePage() {
 		//}
 		def friendly_name = ""
 		if(!existEntityInList(addedDNIList, entity_id)) {
-			if(!settings.haDeviceFilter) {
+			if(!settings.haEntityFilter) {
 				if(!entity_id.contains("_st")) {
 					list.push("${entity_id} [${friendly_name}]")
 				}
 			} else {
-				if(entity_id.contains(settings.haDeviceFilter) || friendly_name.contains(settings.haDeviceFilter)) {
+				if(entity_id.contains(settings.haEntityFilter) || friendly_name.contains(settings.haEntityFilter)) {
 					if(!entity_id.contains("_st")) {
 						list.push("${entity_id} [${friendly_name}]")
 					}
@@ -109,7 +109,7 @@ def haAddDevicePage() {
 		}
 	}
 	list.sort()
-	dynamicPage(name: "haAddDevicePage", nextPage: "mainPage", title:"") {
+	dynamicPage(name: "haDevicePage", nextPage: "mainPage", title:"") {
 		section ("[HA -> ST] 장치 가져오기") {
 			input(name: "selectedAddHADevice", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
 		}
@@ -119,7 +119,7 @@ def haAddDevicePage() {
 	}
 }
 
-def haAddSensorPage() {
+def haSensorPage() {
 	def addedDNIList = []
 	def childDevices = getAllChildDevices()
 	childDevices.each { childDevice->
@@ -137,12 +137,12 @@ def haAddSensorPage() {
 		//}
 		def friendly_name = ""
 		if(!existEntityInList(addedDNIList, entity_id)) {
-			if(!settings.haDeviceFilter) {
+			if(!settings.haEntityFilter) {
 				if(!entity_id.contains("_st")) {
 					list.push("${entity_id} [${friendly_name}]")
 				}
 			} else {
-				if(entity_id.contains(settings.haDeviceFilter) || friendly_name.contains(settings.haDeviceFilter)) {
+				if(entity_id.contains(settings.haEntityFilter) || friendly_name.contains(settings.haEntityFilter)) {
 					if(!entity_id.contains("_st")) {
 						list.push("${entity_id} [${friendly_name}]")
 					}
@@ -151,7 +151,7 @@ def haAddSensorPage() {
 		}
 	}
 	list.sort()
-	dynamicPage(name: "haAddSensorPage", nextPage: "mainPage", title:"") {
+	dynamicPage(name: "haSensorPage", nextPage: "mainPage", title:"") {
 		section ("[HA -> ST] 센서 가져오기") {
 			input(name: "selectedAddHASensor", title:"Select" , type: "enum", required: true, options: list, defaultValue: "None")
 		}

@@ -62,37 +62,6 @@ def mainPage() {
 	}
 }
 
-/*
-def haDevicePage() {
-	getDeviceList()
-	dynamicPage(name: "haDevicePage", title:"[HA -> ST] 장치 가져오기", refreshInterval:5) {
-		section("추가 가능한 HA 장치들을 읽어옵니다.") {
-			if(state.latestHttpResponse) {
-				if(state.latestHttpResponse == 200) {
-					paragraph "Connected \nOK: 200"
-				} else {
-					paragraph "Connection error \nHTTP response code: " + state.latestHttpResponse
-				}
-			}
-		}
-	}
-}
-
-def haSensorPage() {
-	getSensorList()
-	dynamicPage(name: "haSensorPage", title:"[HA -> ST] 센서 가져오기", refreshInterval:5) {
-		section("추가 가능한 HA 센서들을 읽어옵니다.") {
-			if(state.latestHttpResponse) {
-				if(state.latestHttpResponse == 200) {
-					paragraph "Connected \nOK: 200"
-				} else {
-					paragraph "Connection error \nHTTP response code: " + state.latestHttpResponse
-				}
-			}
-		}
-	}
-}
-*/
 def haEntityPage() {
 	getEntityList()
 	dynamicPage(name: "haEntityPage", title:"[HA -> ST] 장치/센서 가져오기", refreshInterval:5) {
@@ -319,23 +288,6 @@ def addHAChildSensor() {
 	}
 }
 
-/*
-def refreshRegisteredHADeviceList() {
-	def options = [
-		"method": "POST",
-		"path": "/api/services/ha_connector/refresh",
-		"headers": [
-			"HOST": settings.haAddress,
-			"Authorization": "Bearer ${settings.haPassword}",
-			"Content-Type": "application/json"
-		],
-		"body": []
-	]
-
-	def myhubAction = new physicalgraph.device.HubAction(options, null, [callback: null])
-	sendHubCommand(myhubAction)
-}
-*/
 def refreshRegisteredHADeviceList() {
 	def service = "/api/services/ha_services/refresh"
 	def params = [
@@ -376,122 +328,6 @@ def getHASensorByEntityId(entity_id) {
 	return target
 }
 
-/*
-def getDataList() {
-	def options = [
-		"method": "GET",
-		"path": "/api/states",
-		"headers": [
-			"HOST": "192.168.219.130:8123",
-			"Authorization": "Bearer ${settings.haToken}",
-			"Content-Type": "application/json"
-		]
-	]
-
-	def myhubAction = new physicalgraph.device.HubAction(options, null, [callback: dataCallback])
-	sendHubCommand(myhubAction)
-}
-
-def dataCallback(physicalgraph.device.HubResponse hubResponse) {
-	def msg, status, json = []
-	try {
-		msg = parseLanMessage(hubResponse.description)
-		status = msg.status
-		log.info "msg: ${msg}"
-		msg.json.each {
-			def entity_type = it.entity_id.split('\\.')[0]
-			if(entity_type != "sensor" && entity_type != "binary_sensor") {
-				//HA의 Entity Data가 많으면 에러가 발생하기 때문에 Data량을 최대한 줄임
-				//def obj = [entity_id: "${it.entity_id}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
-				def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
-				json.push(obj)
-			}
-		}
-		state.dataDeviceList = json
-		state.latestHttpResponse = status
-	} catch (e) {
-		log.warn "Exception caught while parsing data: "+e
-	}
-}
-*/
-/*
-def getDeviceList() {
-	def service = "/api/states"
-	def params = [
-		uri: settings.haURL,
-		path: service,
-		headers: ["Authorization": "Bearer " + settings.haToken],
-		requestContentType: "application/json"
-	]
-	def switchEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command", "esphome",
-						"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
-	def json = []
-	try {
-		httpGet(params) { resp ->
-			resp.headers.each {
-				//log.debug "${it.name} : ${it.value}"
-			}
-			if (resp.status == 200) {
-				//log.debug "resp.data: ${resp.data}"
-				resp.data.each {
-					def entity_type = it.entity_id.split('\\.')[0]
-					if(switchEntity.contains(entity_type)) {
-						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
-						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
-						//def obj = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
-						//def obj = [entity_id: "${it.entity_id}", friendly_name: ""]
-						def obj = [id: "${it.entity_id}"]
-						json.push(obj)
-					}
-				}
-				state.dataDeviceList = json
-			}
-			state.latestHttpResponse = resp.status
-		}
-	} catch (e) {
-		state.latestHttpResponse = 401
-		log.error "HomeAssistant Services Error: $e"
-	}
-}
-
-def getSensorList() {
-	def service = "/api/states"
-	def params = [
-		uri: settings.haURL,
-		path: service,
-		headers: ["Authorization": "Bearer " + settings.haToken],
-		requestContentType: "application/json"
-	]
-	def sensorEntity = ["sensor", "binary_sensor"]
-	def json = []
-	try {
-		httpGet(params) { resp ->
-			resp.headers.each {
-				//log.debug "${it.name} : ${it.value}"
-			}
-			if (resp.status == 200) {
-				//log.debug "resp.data: ${resp.data}"
-				resp.data.each {
-					def entity_type = it.entity_id.split('\\.')[0]
-					if(sensorEntity.contains(entity_type)) {
-						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
-						//def obj = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
-						//def obj = [entity_id: "${it.entity_id}", friendly_name: ""]
-						def obj = [id: "${it.entity_id}"]
-						json.push(obj)
-					}
-				}
-				state.dataSensorList = json
-			}
-			state.latestHttpResponse = resp.status
-		}
-	} catch (e) {
-		state.latestHttpResponse = 401
-		log.error "HomeAssistant Services Error: $e"
-	}
-}
-*/
-
 def getEntityList() {
 	def service = "/api/states"
 	def params = [
@@ -515,18 +351,18 @@ def getEntityList() {
 				resp.data.each {
 					def entity_type = it.entity_id.split('\\.')[0]
 					if(switchEntity.contains(entity_type)) {
-						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
-						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
-						//def obj = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
-						//def obj = [entity_id: "${it.entity_id}", friendly_name: ""]
+						//def objDevice = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+						//def objDevice = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
+						//def objDevice = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
+						//def objDevice = [entity_id: "${it.entity_id}", friendly_name: ""]
 						def objDevice = [id: "${it.entity_id}"]
 						jsonDevice.push(objDevice)
 					}
 					if(sensorEntity.contains(entity_type)) {
-						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
-						//def obj = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
-						//def obj = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
-						//def obj = [entity_id: "${it.entity_id}", friendly_name: ""]
+						//def objSensor = [entity_id: "${it.entity_id}", state: "${it.state}", attributes: [friendly_name: "${it.attributes.friendly_name}"]]
+						//def objSensor = [entity_id: "${it.entity_id}", state: "${it.state}", friendly_name: "${it.attributes.friendly_name}"]
+						//def objSensor = [entity_id: "${it.entity_id}", friendly_name: "${it.attributes.friendly_name}"]
+						//def objSensor = [entity_id: "${it.entity_id}", friendly_name: ""]
 						def objSensor = [id: "${it.entity_id}"]
 						jsonSensor.push(objSensor)
 					}
@@ -674,24 +510,6 @@ def authError() {
 	[error: "Permission denied"]
 }
 
-/*
-def renderConfig() {
-	def configJson = new groovy.json.JsonOutput().toJson([
-		description: "HA-Services API",
-		platforms: [
-			[
-				platform: "SmartThings HA-Services",
-				name: "HA-Services",
-				app_url: apiServerUrl("/api/smartapps/installations/"),
-				app_id: app.id,
-				access_token: state.accessToken
-			]
-		],
-	])
-	def configString = new groovy.json.JsonOutput().prettyPrint(configJson)
-	render contentType: "text/plain", data: configString
-}
-*/
 def renderConfig() {
 	def configJson = new groovy.json.JsonOutput().toJson([
 		name: "HA-Services",

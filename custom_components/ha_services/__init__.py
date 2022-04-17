@@ -86,9 +86,8 @@ async def async_setup_entry(hass, config_entry):
                 url += "&unit=" + newState.as_dict()['attributes']['unit_of_measurement']
             except:
                 url = url
-        } else {
+        else:
             url = app_url + app_id + "/device?access_token=" + access_token + "&entity_id=" + id + "&value=" + newState.state
-        }
 
         try:
             attr = json.dumps(newState.as_dict().get('attributes'))

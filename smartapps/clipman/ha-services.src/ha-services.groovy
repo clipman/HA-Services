@@ -578,16 +578,6 @@ def updateEntity(entity_id) {
 	}
 }
 
-def getHADevices() {
-	def haDevices = []
-	def childDevices = getAllChildDevices()
-	childDevices.each { childDevice->
-		haDevices.push(childDevice.deviceNetworkId)
-	}
-	def deviceJson = new groovy.json.JsonOutput().toJson([list: haDevices])
-	render contentType: "application/json", data: deviceJson
-}
-
 def authError() {
 	[error: "Permission denied"]
 }
@@ -603,18 +593,28 @@ def renderConfig() {
 	render contentType: "text/plain", data: configString
 }
 
+def getList() {
+	def haDevices = []
+	def childDevices = getAllChildDevices()
+	childDevices.each { childDevice->
+		haDevices.push(childDevice.deviceNetworkId)
+	}
+	def deviceJson = new groovy.json.JsonOutput().toJson([list: haDevices])
+	render contentType: "application/json", data: deviceJson
+}
+
 mappings {
 	if (!params.access_token || (params.access_token && params.access_token != state.accessToken)) {
 		path("/config")	{ action: [GET: "authError"] }
 		path("/device")	{ action: [GET: "authError"] }
 		path("/sensor")	{ action: [GET: "authError"] }
-		path("/getHADevices") { action: [GET: "authError"] }
+		path("/list") { action: [GET: "authError"] }
 		//path("/get")	{ action: [POST: "authError"] }
 	} else {
 		path("/config")	{ action: [GET: "renderConfig"] }
 		path("/device")	{ action: [GET: "updateDevice"] }
 		path("/sensor")	{ action: [GET: "updateSensor"] }
-		path("/getHADevices") { action: [GET: "getHADevices"] }
+		path("/list") { action: [GET: "getList"] }
 		//path("/get")	{ action: [POST: "updateSTDevice"] }
 	}
 }

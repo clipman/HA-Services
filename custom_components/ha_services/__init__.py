@@ -51,7 +51,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: config_combined()}, extra=vol.ALLOW_EXTRA)
 
 
 async def getRegisteredHADeviceList(session, app_url, app_id, access_token):
-    response = await session.get(app_url + app_id + "/getHADevices?access_token=" + access_token)
+    response = await session.get(app_url + app_id + "/list?access_token=" + access_token)
 
     return json.loads( await response.text() )['list']
 

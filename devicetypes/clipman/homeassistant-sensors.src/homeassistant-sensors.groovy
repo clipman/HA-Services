@@ -15,10 +15,12 @@
  */
 
 metadata {
-	definition (name: "HomeAssistant Sensors", namespace: "clipman", author: "clipman", mnmn: "SmartThingsCommunity", vid: "4e1ca28e-4993-3471-9de6-d6cadaa05a8c") {
-		capability "Sensor"
+	definition (name: "HomeAssistant Sensors", namespace: "clipman", author: "clipman", mnmn: "SmartThingsCommunity", vid: "124ffa8c-6026-3bae-93ae-045746e2aa07") {
 		capability "Refresh"
 		capability "circlecircle06391.statusBar"
+		capability "circlecircle06391.string"
+		capability "circlecircle06391.number"
+		capability "circlecircle06391.unit"
 	}
 	preferences {
 		input type: "paragraph", element: "paragraph", title: "만든이", description: "김민수 clipman@naver.com [날자]<br>네이버카페: Smartthings & IoT home Community", displayDuringSetup: false
@@ -37,4 +39,16 @@ def installed() {
 
 def refresh() {
 	parent.updateEntity(device.deviceNetworkId)
+}
+
+def setString(string) {
+   	sendEvent(name: "string", value: string)
+}
+
+def setNumber(number) {
+   	sendEvent(name: "number", value: number)
+}
+
+def setUnit(unit) {
+   	sendEvent(name: "unit", value: unit)
 }

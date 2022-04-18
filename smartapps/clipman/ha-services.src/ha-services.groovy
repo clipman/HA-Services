@@ -195,6 +195,8 @@ def updated() {
 	app.updateSetting("selectedDeleteEntity", "None")
 	app.updateSetting("addDeviceName", "")
 	app.updateSetting("addSensorName", "")
+
+	//app.deleteSetting("haEntityFilter")
 }
 
 def initialize() {
@@ -210,7 +212,7 @@ def deleteEntity() {
 			//log.debug "DELETE >> " + settings.selectedDeleteEntity
 			def nameAndDni = settings.selectedDeleteEntity.split(" \\[")
 			try {
-				deleteChildEntity(nameAndDni[0])
+				deleteChildDevice(nameAndDni[0])
 			} catch(err) {
 				//
 			}

@@ -68,7 +68,7 @@ async def async_setup_entry(hass, config_entry):
     app_url = config_entry.data[CONF_APP_URL]
     app_id  = config_entry.data[CONF_APP_ID]
     access_token = config_entry.data[CONF_ACCESS_TOKEN]
-    sensors = ["sensor", "binary_sensor", "input_datetime", "input_number", "input_text", "zone"]
+    sensors = ["sensor", "binary_sensor", "device_tracker", "input_datetime", "input_number", "input_text", "zone"]
 
     session = async_get_clientsession(hass)
     registerList = await getRegisteredHADeviceList(session, app_url, app_id, access_token)

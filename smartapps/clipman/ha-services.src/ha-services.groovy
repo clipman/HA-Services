@@ -554,3 +554,72 @@ mappings {
 		path("/list") { action: [GET: "getList"] }
 	}
 }
+
+/*
+@Field
+CAPABILITY_MAP = [
+	"airConditionerFanMode": [
+		name: "Air Conditioner Fan Mode",
+		capability: "capability.airConditionerFanMode",
+		attributes: ["fanMode"]
+	],
+	"veryFineDustSensor": [
+		name: "Very Fine Dust Sensor",
+		capability: "capability.veryFineDustSensor",
+		attributes: ["veryFineDustLevel"]
+	],
+	"waterSensor": [
+		name: "WaterSensor",
+		capability: "capability.borderreason25422.waterSensor",
+		attributes: ["water"]
+	]
+]
+
+@Field
+attributesMap = ["fanMode": "fan_mode", "veryFineDustLevel": "very_fine_dust_level", "water": "water"]
+
+preferences {
+   page(name: "stSensorPage")
+}
+
+		section("[ST -> HA]") {
+		   href "stSensorPage", title: "Add ST Sensors", description:"HA의 센서로 등록해 두면 값이 변경시 적용됩니다."
+		}
+
+def updated() {
+	unsubscribe()
+	CAPABILITY_MAP.each { key, capabilities ->
+		capabilities["attributes"].each { attribute ->
+			for (item in settings[key]) {
+				subscribe(item, attribute, stateChangeHandler)
+			}
+		}
+	}
+}
+
+def stSensorPage() {
+	dynamicPage(name: "stSensorPage", title: "") {
+		section ("[ST -> HA] Add ST Sensors") {
+			CAPABILITY_MAP.each { key, capability ->
+				input key, capability["capability"], title: capability["name"], multiple: true, required: false
+			}
+		}
+	}
+}
+
+def stateChangeHandler(evt) {
+	//evt.id: Device ID
+	//evt.displayName: 서재불,책상불,서재조도,...
+	//evt.name: switch,signalLighting,motion,contact,carbonDioxide,...
+	def device = evt.getDevice()
+	def entity_id = "sensor." + device.name
+	// HA의 센서 이름은 sensor.<name>_<attribute>
+	def attribute = attributesMap[evt.name]
+	if(attribute == null) {
+		attribute = evt.name.toLowerCase()
+	}
+	entity_id += ("_" + attributes)
+	log.debug "[stateChangeHandler] Attribute: ${evt.displayName}[${evt.name}] >>>>> ${entity_id}"
+	services("/api/services/homeassistant/update_entity", ["entity_id": entity_id])
+}
+*/

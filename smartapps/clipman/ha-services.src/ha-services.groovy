@@ -21,7 +21,7 @@ import groovy.transform.Field
 deviceEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command",
 				"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
 @Field
-sensorEntity = ["sensor", "binary_sensor", "input_datetime", "input_number", "input_text", "zone"]
+sensorEntity = ["sensor", "binary_sensor", "device_tracker", "input_datetime", "input_number", "input_text", "zone"]
 
 definition(
 	name: "HA-Services",

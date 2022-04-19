@@ -49,8 +49,7 @@ definition(
 	category: "My Apps",
 	iconUrl: "https://brands.home-assistant.io/_/ha_services/icon.png",
 	iconX2Url: "https://brands.home-assistant.io/_/ha_services/icon.png",
-	iconX3Url: "https://brands.home-assistant.io/_/ha_services/icon.png",
-	oauth: true
+	iconX3Url: "https://brands.home-assistant.io/_/ha_services/icon.png"
 )
 
 preferences {

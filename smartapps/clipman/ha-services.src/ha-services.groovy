@@ -17,6 +17,12 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import groovy.transform.Field
 
+@Field
+deviceEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command",
+				"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
+@Field
+sensorEntity = ["sensor", "binary_sensor", "input_datetime", "input_number", "input_text", "zone"]
+
 definition(
 	name: "HA-Services",
 	namespace: "clipman",
@@ -214,16 +220,17 @@ def addDevice() {
 			def haDevice = getEntityById(state.dataDeviceList, entity_id)
 			if(haDevice) {
 				def dth = "HomeAssistant Devices"
-				def name = addDeviceName
-				if(!name) {
-					name = haDevice.name	//name = haDevice.friendly_name
-					if(!name) {
-						name = entity_id
+				def label = addDeviceName
+				if(!label) {
+					label = haDevice.name	//label = haDevice.friendly_name
+					if(!label) {
+						label = entity_id
 					}
 				}
+				def name = entity_id.split("\\.")[1]
 				try {
 					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
-					addChildDevice("clipman", dth, dni, "", ["name": entity_id, "label": name])
+					addChildDevice("clipman", dth, dni, null, ["name": name, "label": label])
 				} catch(err) {
 					log.error "Add HA Device ERROR >> ${err}"
 				}
@@ -241,16 +248,17 @@ def addSensor() {
 			def haSensor = getEntityById(state.dataSensorList, entity_id)
 			if(haSensor) {
 				def dth = "HomeAssistant Sensors"
-				def name = addSensorName
-				if(!name) {
-					name = haSensor.name	//name = haSensor.friendly_name
-					if(!name) {
-						name = entity_id
+				def label = addSensorName
+				if(!label) {
+					label = haSensor.name	//label = haSensor.friendly_name
+					if(!label) {
+						label = entity_id
 					}
 				}
+				def name = entity_id.split("\\.")[1]
 				try {
 					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
-					addChildDevice("clipman", dth, dni, "", ["name": entity_id, "label": name])
+					addChildDevice("clipman", dth, dni, null, ["name": name, "label": label])
 				} catch(err) {
 					log.error "Add HA Sensor ERROR >> ${err}"
 				}
@@ -321,9 +329,6 @@ def getEntityList() {
 		headers: ["Authorization": "Bearer " + settings.haToken],
 		requestContentType: "application/json"
 	]
-	def deviceEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command", "esphome",
-						"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
-	def sensorEntity = ["sensor", "binary_sensor"]
 	def jsonDevice = []
 	def jsonSensor = []
 	try {
@@ -336,7 +341,7 @@ def getEntityList() {
 				resp.data.each {
 					def entity_id = it.entity_id
 					def friendly_name = it.attributes.friendly_name
-					def entity_type = entity_id.split('\\.')[0]
+					def entity_type = entity_id.split("\\.")[0]
 					if(deviceEntity.contains(entity_type)) {
 						if(!settings.entityFilter) {
 							def objDevice = [id: "${it.entity_id}", name: ""]
@@ -371,7 +376,6 @@ def getEntityList() {
 	}
 }
 
-//HA->ST
 def updateDevice() {
 	def dni = params.entity_id
 	def attr = null
@@ -379,7 +383,6 @@ def updateDevice() {
 	try {
 		attr = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
 	} catch(err) {
-		//log.debug "${dni} attr decoding error : "+params.attr
 	}
 	oldstate = params?.old
 	try {
@@ -387,41 +390,9 @@ def updateDevice() {
 		if(device) {
 			log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
 			if (params.value != oldstate) {
-				def entity_type = dni.split('\\.')[0]
-				def onOff = params.value
-				switch(entity_type) {
-					case "vacuum":
-						if(params.value == "docked" || params.value == "returning") {
-							onOff = "off"
-						} else {
-							onOff = "on"
-						}
-						break;
-					case "cover":
-						if(params.value == "open" || params.value == "opening" || params.value == "partially open") {
-							onOff = "on"
-						} else {
-							onOff = "off"
-						}
-						break;
-					case "lock":
-						if(params.value == "locked") {
-							onOff = "off"
-						} else {
-							onOff = "on"
-						}
-						break;
-					case "climate":
-						if(params.value == "off") {
-							onOff = "off"
-						} else {
-							onOff = "on"
-						}
-						break;
-					default:	//switch, light, fan, input_boolean, ...
-						break;
-				}
-				device.setStatus(onOff)
+				def state = params.value
+				def unit = (params?.unit) ? params.unit : ""
+				setStateEntity(device, dni, state, unit)
 			}
 		}
 	} catch(err) {
@@ -438,7 +409,6 @@ def updateSensor() {
 	try {
 		attr = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
 	} catch(err) {
-		//log.debug "${dni} attr decoding error : "+params.attr
 	}
 	oldstate = params?.old
 	try {
@@ -446,28 +416,9 @@ def updateSensor() {
 		if(device) {
 			log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
 			if (params.value != oldstate) {
-				def entity_type = dni.split('\\.')[0]
 				def state = params.value
-				def unit = (params?.unit) ? " ${params.unit}" : ""
-				switch(entity_type) {
-					case "sensor":
-						state = params.value
-						break;
-					case "binary_sensor":
-						state = params.value
-						break;
-					default:
-						state = params.value
-						break;
-				}
-				device.setStatus(state + unit)
-				device.setString(state)
-				try {
-					device.setNumber(state as float)
-				} catch (e) {
-					log.info "HomeAssistant Services updateSensor Info: $e"
-				}
-				device.setUnit(params?.unit)
+				def unit = (params?.unit) ? params.unit : ""
+				setStateEntity(device, dni, state, unit)
 			}
 		}
 	} catch(err) {
@@ -489,31 +440,61 @@ def updateEntity(entity_id) {
 	if(device) {
 		try {
 			httpGet(params) { resp ->
-				resp.headers.each {
-					//log.debug "${it.name} : ${it.value}"
-				}
 				if (resp.status == 200) {
 					log.debug "resp.data : ${resp.data}"
-					//resp.data: [attributes:[friendly_name:rockrobo.vacuum.v1 Current Clean Duration, icon:mdi:timer-sand, unit_of_measurement:s], context:[id:854463bda101b4ef98586909bc437f75, parent_id:null, user_id:null], entity_id:sensor.rockrobo_vacuum_v1_current_clean_duration, last_changed:2022-04-16T03:55:17.772340+00:00, last_updated:2022-04-16T03:55:17.772340+00:00, state:3740]
-					def unit = (resp.data.attributes?.unit_of_measurement) ? " ${resp.data.attributes.unit_of_measurement}" : ""
-					device.setStatus(resp.data.state + unit)
-
-					def entity_type = entity_id.split('\\.')[0]
-					if(entity_type.contains("sensor")) {
-						device.setString(resp.data.state)
-						try {
-							device.setNumber(resp.data.state as float)
-						} catch (e) {
-							log.info "HomeAssistant Services updateEntity Info: $e"
-						}
-						device.setUnit(resp.data.attributes?.unit_of_measurement)
-					}
+					def state = resp.data.state
+					def unit = (resp.data.attributes?.unit_of_measurement) ? resp.data.attributes.unit_of_measurement : ""
+					setStateEntity(device, entity_id, state, unit)
 				}
 			}
 		} catch (e) {
 			log.error "HomeAssistant Services updateEntity Error: $e"
 		}
 	}
+}
+
+def setStateEntity(device, entity_id, value, unit) {
+	def entity_type = entity_id.split("\\.")[0]
+	def state = value
+
+	if(entity_type == "vacuum") {
+		if(value == "docked" || value == "returning") {
+			state = "off"
+		} else {
+			state = "on"
+		}
+	} else if(entity_type == "cover") {
+		if(value == "open" || value == "opening" || value == "partially open") {
+			state = "on"
+		} else {
+			state = "off"
+		}
+	} else if(entity_type == "lock") {
+		if(value == "locked") {
+			state = "off"
+		} else {
+			state = "on"
+		}
+	} else if(entity_type == "climate") {
+		if(value == "off") {
+			state = "off"
+		} else {
+			state = "on"
+		}
+	} else if(sensorEntity.contains(entity_type)) {		//} else if(entity_type in sensorEntity) {
+		device.setString(value)
+		device.setUnit(unit)
+		if(unit != "") {
+			state = value + " " + unit
+		}
+		try {
+			device.setNumber(value as float)
+		} catch (e) {
+		}
+	} else {
+		//switch, light, fan, input_boolean, ...
+	}
+	device.setStatus(state)
 }
 
 def authError() {
@@ -554,72 +535,3 @@ mappings {
 		path("/list") { action: [GET: "getList"] }
 	}
 }
-
-/*
-@Field
-CAPABILITY_MAP = [
-	"airConditionerFanMode": [
-		name: "Air Conditioner Fan Mode",
-		capability: "capability.airConditionerFanMode",
-		attributes: ["fanMode"]
-	],
-	"veryFineDustSensor": [
-		name: "Very Fine Dust Sensor",
-		capability: "capability.veryFineDustSensor",
-		attributes: ["veryFineDustLevel"]
-	],
-	"waterSensor": [
-		name: "WaterSensor",
-		capability: "capability.borderreason25422.waterSensor",
-		attributes: ["water"]
-	]
-]
-
-@Field
-attributesMap = ["fanMode": "fan_mode", "veryFineDustLevel": "very_fine_dust_level", "water": "water"]
-
-preferences {
-   page(name: "stSensorPage")
-}
-
-		section("[ST -> HA]") {
-		   href "stSensorPage", title: "Add ST Sensors", description:"HA의 센서로 등록해 두면 값이 변경시 적용됩니다."
-		}
-
-def updated() {
-	unsubscribe()
-	CAPABILITY_MAP.each { key, capabilities ->
-		capabilities["attributes"].each { attribute ->
-			for (item in settings[key]) {
-				subscribe(item, attribute, stateChangeHandler)
-			}
-		}
-	}
-}
-
-def stSensorPage() {
-	dynamicPage(name: "stSensorPage", title: "") {
-		section ("[ST -> HA] Add ST Sensors") {
-			CAPABILITY_MAP.each { key, capability ->
-				input key, capability["capability"], title: capability["name"], multiple: true, required: false
-			}
-		}
-	}
-}
-
-def stateChangeHandler(evt) {
-	//evt.id: Device ID
-	//evt.displayName: 서재불,책상불,서재조도,...
-	//evt.name: switch,signalLighting,motion,contact,carbonDioxide,...
-	def device = evt.getDevice()
-	def entity_id = "sensor." + device.name
-	// HA의 센서 이름은 sensor.<name>_<attribute>
-	def attribute = attributesMap[evt.name]
-	if(attribute == null) {
-		attribute = evt.name.toLowerCase()
-	}
-	entity_id += ("_" + attributes)
-	log.debug "[stateChangeHandler] Attribute: ${evt.displayName}[${evt.name}] >>>>> ${entity_id}"
-	services("/api/services/homeassistant/update_entity", ["entity_id": entity_id])
-}
-*/

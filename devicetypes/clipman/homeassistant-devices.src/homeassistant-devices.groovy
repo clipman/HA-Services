@@ -26,7 +26,7 @@ metadata {
 }
 
 def setStatus(state) {
-   	sendEvent(name: "switch", value: state)
+	sendEvent(name: "switch", value: state)
 }
 
 def on() {

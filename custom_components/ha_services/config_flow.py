@@ -15,7 +15,7 @@ CONF_ACCESS_TOKEN = 'access_token'
 
 _LOGGER = logging.getLogger(__name__)
 
-class HAConnectorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class HAServicesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for HA-Services"""
 
     VERSION = 1

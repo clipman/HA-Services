@@ -6,5 +6,5 @@
   "codeowners": ["@clipman"],
   "requirements": [],
   "config_flow": true,
-  "version": "2022.04.20"
+  "version": "2022.04.21"
 }

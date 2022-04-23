@@ -22,10 +22,6 @@ metadata {
 		capability "circlecircle06391.number"
 		capability "circlecircle06391.unit"
 	}
-	preferences {
-		input type: "paragraph", element: "paragraph", title: "만든이", description: "김민수 clipman@naver.com [날자]<br>네이버카페: Smartthings & IoT home Community", displayDuringSetup: false
-		input type: "paragraph", element: "paragraph", title: "HomeAssistant Sensors v2022-04-18", description: "", displayDuringSetup: false
-	}
 }
 
 def setStatus(state) {

@@ -42,10 +42,6 @@ metadata {
 		command "returnToHome"
 		command "cleanSpot"
 	}
-	preferences {
-		input type: "paragraph", element: "paragraph", title: "만든이", description: "김민수 clipman@naver.com [날자]<br>네이버카페: Smartthings & IoT home Community", displayDuringSetup: false
-		input type: "paragraph", element: "paragraph", title: "HomeAssistant Devices (Vacuum) v2022-04-20", description: "", displayDuringSetup: false
-	}
 }
 
 def setStatus(state) {
@@ -58,14 +54,6 @@ def setStatus(state, attributes) {
 	sendEvent(name: "statusbar", value: attributes.status+"("+state+")")
 	sendEvent(name: "battery", value: attributes.battery_level, unit: "%")
 	sendEvent(name: "cleanfanspeed", value: attributes.fan_speed)
-	/*
-	if(state == "docked" || state == "returning") {
-		state = "off"
-	} else {
-		state = "on"
-	}
-	setStatus(state)
-	*/
 }
 
 def on() {

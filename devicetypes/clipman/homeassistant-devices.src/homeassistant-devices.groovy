@@ -1,5 +1,5 @@
 /**
- *  HomeAssistant Devices v2022-04-18
+ *  HomeAssistant Devices v2022-04-24
  *  clipman@naver.com
  *  날자
  *
@@ -19,10 +19,6 @@ metadata {
 		capability "Switch"
 		capability "Refresh"
 	}
-	preferences {
-		input type: "paragraph", element: "paragraph", title: "만든이", description: "김민수 clipman@naver.com [날자]<br>네이버카페: Smartthings & IoT home Community", displayDuringSetup: false
-		input type: "paragraph", element: "paragraph", title: "HomeAssistant Devices v2022-04-18", description: "", displayDuringSetup: false
-	}
 }
 
 def setStatus(state) {
@@ -31,14 +27,6 @@ def setStatus(state) {
 
 def setStatus(state, attributes) {
 	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
-	/*
-	if(attributes["power"] != null){
-		sendEvent(name: "power", value:  attributes["power"] as double, unit: "W", displayed: true)
-	}
-	if(attributes["energy"] != null){
-		sendEvent(name: "energy", value: attributes["energy"] as double, unit: "kWh", displayed: true)
-	}
-	*/
 }
 
 def on() {

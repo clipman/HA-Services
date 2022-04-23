@@ -21,10 +21,6 @@ metadata {
 		capability "Energy Meter"
 		capability "Refresh"
 	}
-	preferences {
-		input type: "paragraph", element: "paragraph", title: "만든이", description: "김민수 clipman@naver.com [날자]<br>네이버카페: Smartthings & IoT home Community", displayDuringSetup: false
-		input type: "paragraph", element: "paragraph", title: "HomeAssistant Devices (PlugFan) v2022-04-23", description: "", displayDuringSetup: false
-	}
 }
 
 def setStatus(state) {

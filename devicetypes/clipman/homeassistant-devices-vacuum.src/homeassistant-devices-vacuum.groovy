@@ -69,27 +69,27 @@ def installed() {
 def setVacuum(mode){
 	log.debug "setVacuum '${mode}'"
 	switch(mode) {
-		case "start":
-	  		start()
-			break;
-		case "stop":
-	  		stop()
-			break;
-		case "pause":
-			pause()
-			break;
-		case "returnToHome":
-	  		returnToHome()
-			break;
-		case "cleanSpot":
-	  		cleanSpot()
-			break;
-		case "locate":
-	  		locate()
-			break;
-  		default:
-	  		returnToHome()
-			break;
+	case "start":
+  		start()
+		break;
+	case "stop":
+  		stop()
+		break;
+	case "pause":
+		pause()
+		break;
+	case "returnToHome":
+  		returnToHome()
+		break;
+	case "cleanSpot":
+  		cleanSpot()
+		break;
+	case "locate":
+  		locate()
+		break;
+	default:
+		returnToHome()
+		break;
 	}
 	sendEvent(name: "vacuum", value: device.currentValue("vacuum"))
 }
@@ -169,52 +169,52 @@ def getSensorState(entity_id){
 def setVacuumStatus(entity_id, state, attributes){
 	//log.debug "Status[${entity_id}] >> ${state}"
 	switch(entity_id) {
-		case "sensor.rockrobo_vacuum_v1_last_clean_start":
-			sendEvent(name: "cleanstart", value: state, unit: "")
-			break;
-		case "sensor.rockrobo_vacuum_v1_last_clean_end":
-			sendEvent(name: "cleanstop", value: state, unit: "")
-			break;
-		case "sensor.rockrobo_vacuum_v1_current_clean_area":
-			sendEvent(name: "cleanedarea", value: state, unit: "㎡")
-			break;
-		case "sensor.rockrobo_vacuum_v1_current_clean_duration":
-			sendEvent(name: "cleaningtime", value: (state as int)/60, unit: "분")
-			break;
-		case "sensor.rockrobo_vacuum_v1_total_clean_area":
-			sendEvent(name: "totalcleanedarea", value: state, unit: "㎡")
-			break;
-		case "sensor.rockrobo_vacuum_v1_total_duration":
-			sendEvent(name: "totalcleaningtime", value: (state as int)/60, unit: "분")
-			break;
-		case "sensor.rockrobo_vacuum_v1_total_clean_count":
-			sendEvent(name: "cleaningcount", value: state, unit: "")
-			break;
-		case "sensor.rockrobo_vacuum_v1_filter_left":
-			sendEvent(name: "filterleft", value: (state as int)/3600, unit: "시간")
-			break;
-		case "sensor.rockrobo_vacuum_v1_main_brush_left":
-			sendEvent(name: "mainbrushleft", value: (state as int)/3600, unit: "시간")
-			break;
-		case "sensor.rockrobo_vacuum_v1_side_brush_left":
-			sendEvent(name: "sidebrushleft", value: (state as int)/3600, unit: "시간")
-			break;
-		case "sensor.rockrobo_vacuum_v1_sensor_dirty_left":
-			sendEvent(name: "sensordirtyleft", value: (state as int)/3600, unit: "시간")
-			break;
-		case device.deviceNetworkId:
-			sendEvent(name: "vacuum", value: state)	// 대시보드 상태바에 출력됨
-			sendEvent(name: "statusbar", value: attributes.status+"("+state+")")
-			sendEvent(name: "battery", value: attributes.battery_level, unit: "%")
-			sendEvent(name: "cleanfanspeed", value: attributes.fan_speed)
-			if(state == "docked" || state == "returning") {
-				state = "off"
-			} else {
-				state = "on"
-			}
-			setStatus(state)
-			break;
-		default:
-			break;
+	case "sensor.rockrobo_vacuum_v1_last_clean_start":
+		sendEvent(name: "cleanstart", value: state, unit: "")
+		break;
+	case "sensor.rockrobo_vacuum_v1_last_clean_end":
+		sendEvent(name: "cleanstop", value: state, unit: "")
+		break;
+	case "sensor.rockrobo_vacuum_v1_current_clean_area":
+		sendEvent(name: "cleanedarea", value: state, unit: "㎡")
+		break;
+	case "sensor.rockrobo_vacuum_v1_current_clean_duration":
+		sendEvent(name: "cleaningtime", value: (state as int)/60, unit: "분")
+		break;
+	case "sensor.rockrobo_vacuum_v1_total_clean_area":
+		sendEvent(name: "totalcleanedarea", value: state, unit: "㎡")
+		break;
+	case "sensor.rockrobo_vacuum_v1_total_duration":
+		sendEvent(name: "totalcleaningtime", value: (state as int)/60, unit: "분")
+		break;
+	case "sensor.rockrobo_vacuum_v1_total_clean_count":
+		sendEvent(name: "cleaningcount", value: state, unit: "")
+		break;
+	case "sensor.rockrobo_vacuum_v1_filter_left":
+		sendEvent(name: "filterleft", value: (state as int)/3600, unit: "시간")
+		break;
+	case "sensor.rockrobo_vacuum_v1_main_brush_left":
+		sendEvent(name: "mainbrushleft", value: (state as int)/3600, unit: "시간")
+		break;
+	case "sensor.rockrobo_vacuum_v1_side_brush_left":
+		sendEvent(name: "sidebrushleft", value: (state as int)/3600, unit: "시간")
+		break;
+	case "sensor.rockrobo_vacuum_v1_sensor_dirty_left":
+		sendEvent(name: "sensordirtyleft", value: (state as int)/3600, unit: "시간")
+		break;
+	case device.deviceNetworkId:
+		sendEvent(name: "vacuum", value: state)	// 대시보드 상태바에 출력됨
+		sendEvent(name: "statusbar", value: attributes.status+"("+state+")")
+		sendEvent(name: "battery", value: attributes.battery_level, unit: "%")
+		sendEvent(name: "cleanfanspeed", value: attributes.fan_speed)
+		if(state == "docked" || state == "returning") {
+			state = "off"
+		} else {
+			state = "on"
+		}
+		setStatus(state)
+		break;
+	default:
+		break;
 	}
 }

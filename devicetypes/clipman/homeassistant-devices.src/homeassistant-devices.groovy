@@ -51,60 +51,60 @@ def control(onOff) {
 	def entity_name = entity_id.split('\\.')[1]
 
 	switch(entity_type) {
-		case "vacuum":
-			if(onOff == "on") {
-				parent.services("/api/services/vacuum/start", ["entity_id": entity_id])
-			} else {
-				parent.services("/api/services/vacuum/return_to_base", ["entity_id": entity_id])
-			}
-			break;
-		case "cover":
-			if(onOff == "on") {
-				parent.services("/api/services/cover/open_cover", ["entity_id": entity_id])
-			} else {
-				parent.services("/api/services/cover/close_cover", ["entity_id": entity_id])
-			}
-			break;
-		case "lock":
-			if(onOff == "on") {
-				parent.services("/api/services/lock/unlock", ["entity_id": entity_id])
-			} else {
-				parent.services("/api/services/lock/lock", ["entity_id": entity_id])
-			}
-			break;
-		case "script":
-			if(onOff == "on") {
-				parent.services("/api/services/script/" + entity_name, [])
-			}
-            onOff = "off"
-			break;
-		case "rest_command":
-			if(onOff == "on") {
-				parent.services("/api/services/rest_command/" + entity_name, [])
-			}
-            onOff = "off"
-			break;
-		case "esphome":
-			if(onOff == "on") {
-				parent.services("/api/services/esphome/" + entity_name, [])
-			}
-            onOff = "off"
-			break;
-		case "button":
-			if(onOff == "on") {
-				parent.services("/api/services/button/press", ["entity_id": entity_id])
-			}
-            onOff = "off"
-			break;
-		case "input_button":
-			if(onOff == "on") {
-				parent.services("/api/services/input_button/press", ["entity_id": entity_id])
-			}
-            onOff = "off"
-			break;
-		default:	//switch, light, climate, fan, input_boolean, ...
-			parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": entity_id])
-			break;
+	case "vacuum":
+		if(onOff == "on") {
+			parent.services("/api/services/vacuum/start", ["entity_id": entity_id])
+		} else {
+			parent.services("/api/services/vacuum/return_to_base", ["entity_id": entity_id])
+		}
+		break;
+	case "cover":
+		if(onOff == "on") {
+			parent.services("/api/services/cover/open_cover", ["entity_id": entity_id])
+		} else {
+			parent.services("/api/services/cover/close_cover", ["entity_id": entity_id])
+		}
+		break;
+	case "lock":
+		if(onOff == "on") {
+			parent.services("/api/services/lock/unlock", ["entity_id": entity_id])
+		} else {
+			parent.services("/api/services/lock/lock", ["entity_id": entity_id])
+		}
+		break;
+	case "script":
+		if(onOff == "on") {
+			parent.services("/api/services/script/" + entity_name, [])
+		}
+           onOff = "off"
+		break;
+	case "rest_command":
+		if(onOff == "on") {
+			parent.services("/api/services/rest_command/" + entity_name, [])
+		}
+           onOff = "off"
+		break;
+	case "esphome":
+		if(onOff == "on") {
+			parent.services("/api/services/esphome/" + entity_name, [])
+		}
+		onOff = "off"
+		break;
+	case "button":
+		if(onOff == "on") {
+			parent.services("/api/services/button/press", ["entity_id": entity_id])
+		}
+           onOff = "off"
+		break;
+	case "input_button":
+		if(onOff == "on") {
+			parent.services("/api/services/input_button/press", ["entity_id": entity_id])
+		}
+		onOff = "off"
+		break;
+	default:	//switch, light, climate, fan, input_boolean, ...
+		parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": entity_id])
+		break;
 	}
-	sendEvent(name: "switch", value: onOff)
+	setStatus(onOff)
 }

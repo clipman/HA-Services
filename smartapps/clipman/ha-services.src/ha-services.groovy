@@ -388,11 +388,13 @@ def updateDevice() {
 	try {
 		def device = getChildDevice(dni)
 		if(device) {
-			log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			log.debug "Device[${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
-				setStateEntity(device, dni, state, unit)
+				setStateEntity(device, dni, state, unit, attr)
+			} else {
+				device.setStatus(params.value, attr)
 			}
 		}
 	} catch(err) {
@@ -414,11 +416,13 @@ def updateSensor() {
 	try {
 		def device = getChildDevice(dni)
 		if(device) {
-			log.debug "HA->ST >> [${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			log.debug "Sensor[${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
-				setStateEntity(device, dni, state, unit)
+				setStateEntity(device, dni, state, unit, attr)
+			} else {
+				device.setStatus(params.value, attr)
 			}
 		}
 	} catch(err) {
@@ -441,10 +445,10 @@ def updateEntity(entity_id) {
 		try {
 			httpGet(params) { resp ->
 				if (resp.status == 200) {
-					log.debug "resp.data : ${resp.data}"
+					log.debug "updateEntity: ${resp.data}"
 					def state = resp.data.state
 					def unit = (resp.data.attributes?.unit_of_measurement) ? resp.data.attributes.unit_of_measurement : ""
-					setStateEntity(device, entity_id, state, unit)
+					setStateEntity(device, entity_id, state, unit, resp.data.attributes)
 				}
 			}
 		} catch (e) {
@@ -453,7 +457,7 @@ def updateEntity(entity_id) {
 	}
 }
 
-def setStateEntity(device, entity_id, value, unit) {
+def setStateEntity(device, entity_id, value, unit, attributes) {
 	def entity_type = entity_id.split("\\.")[0]
 	def state = value
 
@@ -494,7 +498,8 @@ def setStateEntity(device, entity_id, value, unit) {
 	} else {
 		//switch, light, fan, input_boolean, ...
 	}
-	device.setStatus(state)
+	device.setStatus(state)					// 변환된 값
+	device.setStatus(value, attributes)		// 원래값, 속성
 }
 
 def authError() {

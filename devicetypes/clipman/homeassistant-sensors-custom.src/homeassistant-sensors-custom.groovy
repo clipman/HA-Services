@@ -43,6 +43,10 @@ def setStatus(state) {
    	sendEvent(name: "status", value: state)
 }
 
+def setStatus(state, attributes) {
+	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+}
+
 def installed() {
 	refresh()
 }

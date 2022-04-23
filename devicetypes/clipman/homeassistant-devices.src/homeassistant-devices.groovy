@@ -29,6 +29,18 @@ def setStatus(state) {
 	sendEvent(name: "switch", value: state)
 }
 
+def setStatus(state, attributes) {
+	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+	/*
+	if(attributes["power"] != null){
+		sendEvent(name: "power", value:  attributes["power"] as double, unit: "W", displayed: true)
+	}
+	if(attributes["energy"] != null){
+		sendEvent(name: "energy", value: attributes["energy"] as double, unit: "kWh", displayed: true)
+	}
+	*/
+}
+
 def on() {
 	control("on")
 }

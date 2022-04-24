@@ -18,7 +18,7 @@ import groovy.json.JsonOutput
 import groovy.transform.Field
 
 @Field
-deviceEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script", "rest_command",
+deviceEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script",
 				"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
 @Field
 sensorEntity = ["sensor", "binary_sensor", "device_tracker", "input_datetime", "input_number", "input_text", "zone"]
@@ -392,7 +392,7 @@ def updateDevice() {
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
-				setStateEntity(device, dni, state, unit, attr)
+				setEntityStatus(device, dni, state, unit)
 			} else {
 				device.setStatus(params.value, attr)
 			}
@@ -420,7 +420,7 @@ def updateSensor() {
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
-				setStateEntity(device, dni, state, unit, attr)
+				setEntityStatus(device, dni, state, unit)
 			} else {
 				device.setStatus(params.value, attr)
 			}
@@ -434,6 +434,19 @@ def updateSensor() {
 
 def updateEntity(entity_id) {
 	def device = getChildDevice(entity_id)
+	if(device) {
+		def entity = getEntityStatus(entity_id)
+		try {
+			log.debug "Entity[${entity_id}] state:${entity.state}  attr:${entity.attributes}  " + ((entity.unit) ? "  unit:${entity.unit}" : "")
+			setEntityStatus(device, entity_id, entity.state, entity.unit)
+			device.setStatus(entity.state, entity.attributes)
+		} catch (e) {
+			log.error "HomeAssistant Services updateEntity Error: $e"
+		}
+	}
+}
+
+def getEntityStatus(entity_id) {
 	def service = "/api/states/${entity_id}"
 	def params = [
 		uri: settings.haURL,
@@ -441,23 +454,23 @@ def updateEntity(entity_id) {
 		headers: ["Authorization": "Bearer " + settings.haToken],
 		requestContentType: "application/json"
 	]
-	if(device) {
-		try {
-			httpGet(params) { resp ->
-				if (resp.status == 200) {
-					log.debug "updateEntity: ${resp.data}"
-					def state = resp.data.state
-					def unit = (resp.data.attributes?.unit_of_measurement) ? resp.data.attributes.unit_of_measurement : ""
-					setStateEntity(device, entity_id, state, unit, resp.data.attributes)
-				}
+	def entity = [state: null, unit: null, attributes: null]
+	try {
+		httpGet(params) { resp ->
+			if (resp.status == 200) {
+				//log.debug "getEntityStatus: ${resp.data}"
+				entity.state = resp.data.state
+				entity.unit = (resp.data.attributes?.unit_of_measurement) ? resp.data.attributes.unit_of_measurement : ""
+				entity.attributes = resp.data.attributes
 			}
-		} catch (e) {
-			log.error "HomeAssistant Services updateEntity Error: $e"
 		}
+	} catch (e) {
+		log.error "HomeAssistant Services getEntityStatus Error: $e"
 	}
+	return entity
 }
 
-def setStateEntity(device, entity_id, value, unit, attributes) {
+def setEntityStatus(device, entity_id, value, unit) {
 	def entity_type = entity_id.split("\\.")[0]
 	def state = value
 
@@ -485,6 +498,8 @@ def setStateEntity(device, entity_id, value, unit, attributes) {
 		} else {
 			state = "on"
 		}
+	} else if(entity_type == "button" || entity_type == "input_button") {
+		state = "off"
 	} else if(sensorEntity.contains(entity_type)) {		//} else if(entity_type in sensorEntity) {
 		device.setString(value)
 		device.setUnit(unit)
@@ -498,8 +513,7 @@ def setStateEntity(device, entity_id, value, unit, attributes) {
 	} else {
 		//switch, light, fan, input_boolean, ...
 	}
-	device.setStatus(state)					// 변환된 값
-	device.setStatus(value, attributes)		// 원래값, 속성
+	device.setStatus(state)
 }
 
 def authError() {

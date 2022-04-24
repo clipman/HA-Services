@@ -32,7 +32,7 @@ def setStatus(state) {
 
 def setStatus(state, attributes) {
 	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
-	def airConditionerMode = mapHA2STmode(state)
+	def airConditionerMode = modeHA2ST(state)
 	def fanMode = attributes.fan_mode
 	def temperature = attributes.current_temperature as int
 	def coolingSetpoint = attributes.temperature as int
@@ -44,7 +44,7 @@ def setStatus(state, attributes) {
     def supportedAcModes = []
 	supportedHVACmodes.addAll(attributes.hvac_modes)
 	for (hvac_mode in supportedHVACmodes) {
-		def st_mode = mapHA2STmode(hvac_mode)
+		def st_mode = modeHA2ST(hvac_mode)
 		if(st_mode) supportedAcModes << st_mode
 	}
 	sendEvent(name: "supportedAcModes", value: supportedAcModes, displayed: false)
@@ -56,25 +56,7 @@ def setStatus(state, attributes) {
 	sendEvent(name: "airConditionerMode", value: airConditionerMode, displayed: true)
 	sendEvent(name: "fanMode", value: fanMode, displayed: true)
 
-	if(supportedAcFanModes[0] == "auto") {
-		if(fanMode == supportedAcFanModes[0]) {
-			sendEvent(name: "fanSpeed", value: 0)
-		} else if(fanMode == supportedAcFanModes[1]){
-			sendEvent(name: "fanSpeed", value: 1)
-		} else if(fanMode == supportedAcFanModes[2]){
-			sendEvent(name: "fanSpeed", value: 3)
-		} else {
-			sendEvent(name: "fanSpeed", value: 4)
-		}
-	} else {
-		if(fanMode == supportedAcFanModes[0]) {
-			sendEvent(name: "fanSpeed", value: 1)
-		} else if(fanMode == supportedAcFanModes[1]){
-			sendEvent(name: "fanSpeed", value: 2)
-		} else {
-			sendEvent(name: "fanSpeed", value: 4)
-		}
-	}
+	sendEvent(name: "fanSpeed", value: speedFanMode2FanSpeed(fanMode))
 }
 
 def on() {
@@ -95,7 +77,6 @@ def refresh() {
 
 def control(onOff) {
 	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": device.deviceNetworkId])
-	setStatus(onOff)
 }
 
 def setCoolingSetpoint(coolingSetpoint){
@@ -104,7 +85,7 @@ def setCoolingSetpoint(coolingSetpoint){
 
 def setAirConditionerMode(airConditionerMode){
 	//log.info "setAirConditionerMode(airConditionerMode) : ${airConditionerMode}"
-	def hvac_mode =	mapST2HAmode(airConditionerMode)
+	def hvac_mode =	modeST2HA(airConditionerMode)
 	if(hvac_mode) parent.services("/api/services/climate/set_hvac_mode", ["entity_id": device.deviceNetworkId, "hvac_mode": hvac_mode])
 }
 
@@ -113,55 +94,28 @@ def setFanMode(fan_mode) {
 }
 
 def setFanSpeed(fanSpeed){
-	try {
-		def supportedAcFanModes = evaluate(device.currentValue("supportedAcFanModes"))
-		if(supportedAcFanModes[0] == "auto") {
-			if(fanSpeed == 0) {
-				setFanMode(supportedAcFanModes[0])
-			} else if(fanSpeed == 1) {
-				setFanMode(supportedAcFanModes[1])
-			} else if(fanSpeed == 2) {
-				setFanMode(supportedAcFanModes[1])
-			} else if(fanSpeed == 3) {
-				setFanMode(supportedAcFanModes[2])
-			} else{
-				setFanMode(supportedAcFanModes[3])
-			}
-		} else {
-			if(fanSpeed == 0) {
-				//
-			} else if(fanSpeed == 1) {
-				setFanMode(supportedAcFanModes[0])
-			} else if(fanSpeed == 2) {
-				setFanMode(supportedAcFanModes[1])
-			} else if(fanSpeed == 3) {
-				setFanMode(supportedAcFanModes[1])
-			} else{
-				setFanMode(supportedAcFanModes[2])
-			}
-		}
-	} catch (Exception e) {
-		log.warn "supportedAcFanModes: ${e.message}"
-	}
-	sendEvent(name: "fanSpeed", value: fanSpeed)
+	setFanMode(speedFanSpeed2FanMode(fanSpeed))
+	sendEvent(name: "fanSpeed", value: speedFanMode2FanSpeed(speedFanSpeed2FanMode(fanSpeed)))
 }
 
-def mapHA2STmode(ha_mode) {
-	def ret = null
-	Map mapping = ["heat_cool": "auto", "cool": "cool", "dry": "dry", "fan_only": "fanOnly"]
-	try {
-		ret = mapping[ha_mode]
-	} catch(e) {
-	}
-	return ret
+def modeHA2ST(ha_mode) {
+	Map mode = ["heat_cool": "auto", "cool": "cool", "dry": "dry", "fan_only": "fanOnly"]
+	return mode[ha_mode]
 }
 
-def mapST2HAmode(st_mode) {
-	def ret = null
-	Map mapping = ["auto": "heat_cool", "cool": "cool", "dry": "dry", "fanOnly": "fan_only", "coolClean": "cool", "dryClean": "dry"]
-	try {
-		ret = mapping[st_mode]
-	} catch(e) {
-	}
-	return ret
+def modeST2HA(st_mode) {
+	Map mode = ["auto": "heat_cool", "cool": "cool", "dry": "dry", "fanOnly": "fan_only", "coolClean": "cool", "dryClean": "dry", "heatClean": "fan_only", "notSupported": "heat_cool"]
+	return mode[st_mode]
+}
+
+def speedFanMode2FanSpeed(ha_speed) {
+	Map speed = ["auto": 0, "medium": 1, "high": 2, "turbo": 3]
+	//Map speed = ["low": 1, "medium": 2, "high": 3]
+	return speed[ha_speed]
+}
+
+def speedFanSpeed2FanMode(st_speed) {
+	Map speed = [0: "auto", 1: "medium", 2: "high", 3: "turbo", 4: "turbo"]
+	//Map speed = [0: "low", 1: "low", 2: "medium", 3: "high", 4: "high"]
+	return speed[st_speed]
 }

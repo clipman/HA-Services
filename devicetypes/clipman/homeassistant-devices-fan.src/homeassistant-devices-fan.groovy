@@ -46,7 +46,5 @@ def refresh() {
 }
 
 def control(onOff) {
-	def entity_id = device.deviceNetworkId
-	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": entity_id])
-	setStatus(onOff)
+	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": device.deviceNetworkId])
 }

@@ -1,5 +1,5 @@
 /**
- *  HomeAssistant Devices (Plug) v2022-04-23
+ *  HomeAssistant Devices (AirPurifier) v2022-04-23
  *  clipman@naver.com
  *  날자
  *
@@ -15,10 +15,11 @@
  */
 
 metadata {
-	definition (name: "HomeAssistant Devices (Plug)", namespace: "clipman", author: "clipman", ocfDeviceType: "oic.d.smartplug") {
-		capability "Switch"
-		capability "Power Meter"
-		capability "Energy Meter"
+	definition (name: "HomeAssistant Devices (AirPurifier)", namespace: "clipman", author: "clipman", ocfDeviceType: "oic.d.airpurifier") {
+		capability "Switch"							//on, off
+		capability "Dust Sensor"					//dustLevel, fineDustLevel
+		capability "Very Fine Dust Sensor"			//veryFineDustLevel
+		capability "Odor Sensor"					//odorLevel
 		capability "Refresh"
 	}
 }
@@ -29,12 +30,15 @@ def setStatus(state) {
 
 def setStatus(state, attributes) {
 	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
-	if(attributes["power"] != null){
-		sendEvent(name: "power", value:  attributes["power"] as double, unit: "W", displayed: true)
-	}
-	if(attributes["energy"] != null){
-		sendEvent(name: "energy", value: attributes["energy"] as double, unit: "kWh", displayed: true)
-	}
+	def entity
+   	entity = parent.getEntityStatus("sensor.anbang_gonggiceongjeonggi_dust_level")
+	sendEvent(name: "dustLevel", value: entity.state, unit: entity.unit)
+   	entity = parent.getEntityStatus("sensor.anbang_gonggiceongjeonggi_fine_dust_level")
+	sendEvent(name: "fineDustLevel", value: entity.state, unit: entity.unit)
+   	entity = parent.getEntityStatus("sensor.anbang_gonggiceongjeonggi_very_fine_dust_level")
+	sendEvent(name: "veryFineDustLevel", value: entity.state, unit: entity.unit)
+   	entity = parent.getEntityStatus("sensor.anbang_gonggiceongjeonggi_aqi")
+	sendEvent(name: "odorLevel", value: entity.state, unit: entity.unit)
 }
 
 def on() {

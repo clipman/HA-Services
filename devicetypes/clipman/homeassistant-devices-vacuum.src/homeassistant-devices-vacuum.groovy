@@ -54,20 +54,46 @@ def setStatus(state, attributes) {
 	sendEvent(name: "statusbar", value: attributes.status+"("+state+")")
 	sendEvent(name: "battery", value: attributes.battery_level, unit: "%")
 	sendEvent(name: "cleanfanspeed", value: attributes.fan_speed)
+
+	def entity
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_last_clean_start")
+	sendEvent(name: "cleanstart", value: entity.state, unit: entity.unit)
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_last_clean_end")
+	sendEvent(name: "cleanstop", value: entity.state, unit: entity.unit)
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_current_clean_area")
+	sendEvent(name: "cleanedarea", value: entity.state, unit: entity.unit)
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_current_clean_duration")
+	sendEvent(name: "cleaningtime", value: (entity.state as int)/60, unit: "분")
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_total_clean_area")
+	sendEvent(name: "totalcleanedarea", value: entity.state, unit: entity.unit)
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_total_duration")
+	sendEvent(name: "totalcleaningtime", value: (entity.state as int)/60, unit: "분")
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_total_clean_count")
+	sendEvent(name: "cleaningcount", value: entity.state, unit: entity.unit)
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_filter_left")
+	sendEvent(name: "filterleft", value: (entity.state as int)/3600, unit: "시간")
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_main_brush_left")
+	sendEvent(name: "mainbrushleft", value: (entity.state as int)/3600, unit: "시간")
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_side_brush_left")
+	sendEvent(name: "sidebrushleft", value: (entity.state as int)/3600, unit: "시간")
+   	entity = parent.getEntityStatus("sensor.rockrobo_vacuum_v1_sensor_dirty_left")
+	sendEvent(name: "sensordirtyleft", value: (entity.state as int)/3600, unit: "시간")
 }
 
 def on() {
 	parent.services("/api/services/vacuum/start", ["entity_id": device.deviceNetworkId])
-	setStatus("on")
 }
 
 def off() {
 	parent.services("/api/services/vacuum/return_to_base", ["entity_id": device.deviceNetworkId])
-	setStatus("off")
 }
 
 def installed() {
 	refresh()
+}
+
+def refresh(){
+	parent.updateEntity(device.deviceNetworkId)
 }
 
 def setVacuum(mode){
@@ -95,7 +121,6 @@ def setVacuum(mode){
 		returnToHome()
 		break;
 	}
-	sendEvent(name: "vacuum", value: device.currentValue("vacuum"))
 }
 
 def start(){
@@ -123,89 +148,5 @@ def cleanSpot(){
 }
 
 def setFanSpeed(speed){
-	//log.debug "setFanSpeed >> ${speed}"
-	//Silent, Standard, Medium, Turbo
 	parent.services("/api/services/vacuum/set_fan_speed", ["entity_id": device.deviceNetworkId, "fan_speed":speed])
-	sendEvent(name: "cleanfanspeed", value: speed)
-}
-
-def refresh(){
-	getSensorState("sensor.rockrobo_vacuum_v1_last_clean_start")
-	getSensorState("sensor.rockrobo_vacuum_v1_last_clean_end")
-	getSensorState("sensor.rockrobo_vacuum_v1_current_clean_area")
-	getSensorState("sensor.rockrobo_vacuum_v1_current_clean_duration")
-	getSensorState("sensor.rockrobo_vacuum_v1_total_clean_area")
-	getSensorState("sensor.rockrobo_vacuum_v1_total_duration")
-	getSensorState("sensor.rockrobo_vacuum_v1_total_clean_count")
-	getSensorState("sensor.rockrobo_vacuum_v1_filter_left")
-	getSensorState("sensor.rockrobo_vacuum_v1_main_brush_left")
-	getSensorState("sensor.rockrobo_vacuum_v1_side_brush_left")
-	getSensorState("sensor.rockrobo_vacuum_v1_sensor_dirty_left")
-}
-
-def getSensorState(entity_id){
-	def service = "/api/states/${entity_id}"
-	def params = [
-		uri: parent.settings.haURL,
-		path: service,
-		headers: ["Authorization": "Bearer " + parent.settings.haToken],
-		requestContentType: "application/json"
-	]
-	//def json = []
-	try {
-		httpGet(params) { resp ->
-			resp.headers.each {
-				//log.debug "${it.name} : ${it.value}"
-			}
-			if (resp.status == 200) {
-				// resp.data: [attributes:[friendly_name:rockrobo.vacuum.v1 Current Clean Duration, icon:mdi:timer-sand, unit_of_measurement:s], context:[id:854463bda101b4ef98586909bc437f75, parent_id:null, user_id:null], entity_id:sensor.rockrobo_vacuum_v1_current_clean_duration, last_changed:2022-04-16T03:55:17.772340+00:00, last_updated:2022-04-16T03:55:17.772340+00:00, state:3740]
-				//def obj = [entity_id: "${resp.data.entity_id}", state: "${resp.data.state}", attributes: "${resp.data.attributes}"]
-				//json.push(obj)
-				setVacuumStatus(resp.data.entity_id, resp.data.state)
-			}
-		}
-	} catch (e) {
-		log.error "HomeAssistant Services Error: $e"
-	}
-}
-
-def setVacuumStatus(entity_id, state){
-	//log.debug "Status[${entity_id}] >> ${state}"
-	switch(entity_id) {
-	case "sensor.rockrobo_vacuum_v1_last_clean_start":
-		sendEvent(name: "cleanstart", value: state, unit: "")
-		break;
-	case "sensor.rockrobo_vacuum_v1_last_clean_end":
-		sendEvent(name: "cleanstop", value: state, unit: "")
-		break;
-	case "sensor.rockrobo_vacuum_v1_current_clean_area":
-		sendEvent(name: "cleanedarea", value: state, unit: "㎡")
-		break;
-	case "sensor.rockrobo_vacuum_v1_current_clean_duration":
-		sendEvent(name: "cleaningtime", value: (state as int)/60, unit: "분")
-		break;
-	case "sensor.rockrobo_vacuum_v1_total_clean_area":
-		sendEvent(name: "totalcleanedarea", value: state, unit: "㎡")
-		break;
-	case "sensor.rockrobo_vacuum_v1_total_duration":
-		sendEvent(name: "totalcleaningtime", value: (state as int)/60, unit: "분")
-		break;
-	case "sensor.rockrobo_vacuum_v1_total_clean_count":
-		sendEvent(name: "cleaningcount", value: state, unit: "")
-		break;
-	case "sensor.rockrobo_vacuum_v1_filter_left":
-		sendEvent(name: "filterleft", value: (state as int)/3600, unit: "시간")
-		break;
-	case "sensor.rockrobo_vacuum_v1_main_brush_left":
-		sendEvent(name: "mainbrushleft", value: (state as int)/3600, unit: "시간")
-		break;
-	case "sensor.rockrobo_vacuum_v1_side_brush_left":
-		sendEvent(name: "sidebrushleft", value: (state as int)/3600, unit: "시간")
-		break;
-	case "sensor.rockrobo_vacuum_v1_sensor_dirty_left":
-		sendEvent(name: "sensordirtyleft", value: (state as int)/3600, unit: "시간")
-		break;
-	default:
-		break;
-	}
 }

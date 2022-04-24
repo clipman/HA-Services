@@ -15,18 +15,18 @@
  */
 
 metadata {
-	definition (name: "HomeAssistant Sensors", namespace: "clipman", author: "clipman", mnmn: "SmartThingsCommunity", vid: "124ffa8c-6026-3bae-93ae-045746e2aa07") {
+	definition (name: "HomeAssistant Sensors", namespace: "clipman", author: "clipman", mnmn: "SmartThingsCommunity", vid: "1e931a7f-172d-3b8f-8e12-2529b01422e2") {
 		capability "Refresh"
-		capability "circlecircle06391.statusBar"
-		capability "circlecircle06391.string"
-		capability "circlecircle06391.number"
-		capability "circlecircle06391.unit"
+		capability "circlecircle06391.status"	// statusbar
+		capability "circlecircle06391.string"	// string
+		capability "circlecircle06391.number"	// number
+		capability "circlecircle06391.unit"		// unit
 	}
 }
 
 def setStatus(state) {
 	state = state.replace("\t", "").replace("\n", "")
-   	sendEvent(name: "status", value: state)
+	sendEvent(name: "statusbar", value: state)
 }
 
 def setStatus(state, attributes) {

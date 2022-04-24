@@ -76,35 +76,29 @@ def control(onOff) {
 		if(onOff == "on") {
 			parent.services("/api/services/script/" + entity_name, [])
 		}
-           onOff = "off"
 		break;
 	case "rest_command":
 		if(onOff == "on") {
 			parent.services("/api/services/rest_command/" + entity_name, [])
 		}
-           onOff = "off"
 		break;
 	case "esphome":
 		if(onOff == "on") {
 			parent.services("/api/services/esphome/" + entity_name, [])
 		}
-		onOff = "off"
 		break;
 	case "button":
 		if(onOff == "on") {
 			parent.services("/api/services/button/press", ["entity_id": entity_id])
 		}
-           onOff = "off"
 		break;
 	case "input_button":
 		if(onOff == "on") {
 			parent.services("/api/services/input_button/press", ["entity_id": entity_id])
 		}
-		onOff = "off"
 		break;
 	default:	//switch, light, climate, fan, input_boolean, ...
 		parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": entity_id])
 		break;
 	}
-	setStatus(onOff)
 }

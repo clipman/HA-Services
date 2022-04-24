@@ -62,7 +62,6 @@ def refresh() {
 
 def control(onOff) {
 	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": device.deviceNetworkId])
-	setStatus(onOff)
 }
 
 def setHeatingSetpoint(heatingSetpoint){

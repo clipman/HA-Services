@@ -24,12 +24,12 @@ metadata {
 	}
 }
 
-def setStatus(state) {
+def setEntityStatus(state) {
 	sendEvent(name: "switch", value: state)
 }
 
-def setStatus(state, attributes) {
-	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+def setEntityStatus(state, attributes) {
+	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 	def entity
    	entity = parent.getEntityStatus("sensor.anbang_gonggiceongjeonggi_dust_level")
 	sendEvent(name: "dustLevel", value: entity.state, unit: entity.unit)

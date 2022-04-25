@@ -25,12 +25,12 @@ metadata {
 	}
 }
 
-def setStatus(state) {
+def setEntityStatus(state) {
 	sendEvent(name: "switch", value: state)
 }
 
-def setStatus(state, attributes) {
-	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+def setEntityStatus(state, attributes) {
+	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 	def heatingSetpoint = attributes.temperature as int
 	def temperature = attributes.current_temperature as int
 

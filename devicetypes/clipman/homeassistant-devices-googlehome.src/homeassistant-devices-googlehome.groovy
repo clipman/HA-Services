@@ -1,5 +1,5 @@
 /**
- *  HomeAssistant Devices (YouTubeMusic) v2022-04-25
+ *  HomeAssistant Devices (GoogleHome) v2022-04-25
  *  clipman@naver.com
  *  날자
  *
@@ -15,13 +15,13 @@
  */
 
 metadata {
-	definition (name: "HomeAssistant Devices (YouTubeMusic)", namespace: "clipman", author: "clipman", mnmn: "SmartThingsCommunity", vid: "abb7fffa-823d-3f81-a942-d2f8db972c9c") {
-		capability "Switch"
-		capability "Refresh"
+	definition (name: "HomeAssistant Devices (GoogleHome)", namespace: "clipman", author: "clipman", mnmn: "SmartThingsCommunity", vid: "9ad7b709-f12a-3e65-bf9c-58e823fcca8d") {
 		capability "Music Player"
 		capability "Media Playback"
+		capability "Audio Notification"
+		capability "Speech Synthesis"
+		capability "Refresh"
 		capability "circlecircle06391.status"
-		capability "circlecircle06391.lyrics"
 	}
 }
 
@@ -29,18 +29,12 @@ def setEntityStatus(state) {
 	log.debug "setEntityStatus(state) : ${state}"
 	switch(state) {
 	case "playing":
-		if(device.currentValue("switch") != "on") {
-			sendEvent(name: "switch", value: "on")
-		}
 		break;
 	case "paused":
 		setStatusbar("잠시멈춤")
 		break;
 	default:
-		setStatusbar("꺼짐")
-		if(device.currentValue("switch") != "off") {
-			sendEvent(name: "switch", value: "off")
-		}
+		setStatusbar("중지됨")
 		break;
 	}
 }
@@ -53,6 +47,7 @@ def setEntityStatus(state, attributes) {
 		refresh()
 		return
 	}
+
 	sendEvent(name: "playbackStatus", value: (state == "playing" || state == "paused") ? state : "stopped", displayed: "true")
 	sendEvent(name: "status", value: (state == "playing" || state == "paused") ? state : "stopped", displayed: "true")
 	if (attributes.volume_level != null) {
@@ -61,39 +56,25 @@ def setEntityStatus(state, attributes) {
 	sendEvent(name: "mute", value: ("${attributes.is_volume_muted}"=="true") ? "muted" : "unmuted", displayed: "true")
 	if (attributes.media_title != null) {
 		sendEvent(name: "trackDescription", value: (attributes.media_artist + '-' + attributes.media_title), displayed: "true")
-		setLyrics(attributes.media_artist + '-' + attributes.media_title)
 		if(state == "playing") {
 			setStatusbar(attributes.media_title)
 		}
 	} else {
 		sendEvent(name: "trackDescription", value: "-", displayed: "true")
-		setLyrics("")
 		if(state == "playing") {
 			setStatusbar("재생중")
 		}
 	}
 }
 
-def on() {
-	control("on")
-}
-
-def off() {
-	control("off")
-	sendEvent(name: "status", value: "stopped", displayed: "true")
-}
-
 def installed() {
-	sendEvent(name: "supportedPlaybackCommands", value: ["play", "pause", "stop"], displayed: false)
+	setStatusbar("설치됨")
+	sendEvent(name: "supportedPlaybackCommands", value: ["play","pause","stop"], displayed: false)
 	refresh()
 }
 
 def refresh() {
 	parent.updateEntity(device.deviceNetworkId)
-}
-
-def control(onOff) {
-	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": device.deviceNetworkId])
 }
 
 def play() {
@@ -134,10 +115,27 @@ def setVolume(volume) {
 	parent.services("/api/services/media_player/volume_set", ["entity_id": device.deviceNetworkId, "volume_level": volume/100])
 }
 
-def setStatusbar(status) {
-	sendEvent(name: "statusbar", value: status, displayed: "true")
+def deviceNotification(notification) {
+	speak(notification)
 }
 
-def setLyrics(lyrics) {
-	sendEvent(name: "lyrics", value: lyrics, displayed: "false")
+def speak(text) {
+	parent.services("/api/services/tts/google_say", ["entity_id": device.deviceNetworkId, "message": text])
+}
+
+def playTrackAndResume(uri, level = -1){
+	playTrack(uri, level)
+}
+
+def playTrackAndRestore(uri, level = -1){
+	playTrack(uri, level)
+}
+
+def playTrack(uri, level = -1){
+	if (level != -1) setVolume(level)
+	parent.services("/api/services/media_player/play_media", ["entity_id": device.deviceNetworkId, "media_content_id": uri, "media_content_type": "music"])
+}
+
+def setStatusbar(status) {
+	sendEvent(name: "statusbar", value: status, displayed: "true")
 }

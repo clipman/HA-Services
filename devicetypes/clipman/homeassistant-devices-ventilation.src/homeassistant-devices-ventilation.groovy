@@ -22,12 +22,12 @@ metadata {
 	}
 }
 
-def setStatus(state) {
+def setEntityStatus(state) {
 	sendEvent(name: "switch", value: state)
 }
 
-def setStatus(state, attributes) {
-	log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+def setEntityStatus(state, attributes) {
+	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 	if(state == "on" && attributes["preset_mode"]){
 		def level = 0
 		if(attributes["preset_mode"] == "Off"){

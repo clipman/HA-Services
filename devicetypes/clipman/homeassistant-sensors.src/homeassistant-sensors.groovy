@@ -24,13 +24,13 @@ metadata {
 	}
 }
 
-def setStatus(state) {
+def setEntityStatus(state) {
 	state = state.replace("\t", "").replace("\n", "")
 	sendEvent(name: "statusbar", value: state)
 }
 
-def setStatus(state, attributes) {
-	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+def setEntityStatus(state, attributes) {
+	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 }
 
 def installed() {

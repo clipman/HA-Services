@@ -23,12 +23,12 @@ metadata {
 	}
 }
 
-def setStatus(state) {
+def setEntityStatus(state) {
 	sendEvent(name: "switch", value: state)
 }
 
-def setStatus(state, attributes) {
-	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+def setEntityStatus(state, attributes) {
+	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 	if(attributes["power"] != null){
 		sendEvent(name: "power", value:  attributes["power"] as double, unit: "W", displayed: true)
 	}

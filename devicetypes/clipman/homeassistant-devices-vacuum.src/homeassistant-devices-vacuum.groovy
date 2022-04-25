@@ -44,12 +44,12 @@ metadata {
 	}
 }
 
-def setStatus(state) {
+def setEntityStatus(state) {
 	sendEvent(name: "switch", value: state)
 }
 
-def setStatus(state, attributes) {
-	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+def setEntityStatus(state, attributes) {
+	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 	sendEvent(name: "vacuum", value: state)	// 대시보드 상태바에 출력됨
 	sendEvent(name: "statusbar", value: attributes.status+"("+state+")")
 	sendEvent(name: "battery", value: attributes.battery_level, unit: "%")

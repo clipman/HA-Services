@@ -41,15 +41,15 @@ metadata {
 	}
 }
 
-def setStatus(state) {
+def setEntityStatus(state) {
 	//state = state.replace("\t", "").replace("\n", "")
    	//sendEvent(name: "statusbar", value: state)
 	state = state.replace("어제보다 ", "")
 	sendEvent(name: "weatherForecast", value: state, unit: "")
 }
 
-def setStatus(state, attributes) {
-	//log.debug "setStatus(state, attributes) : ${state}, ${attributes}"
+def setEntityStatus(state, attributes) {
+	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 	def entity
    	entity = parent.getEntityStatus("sensor.naver_weather_nowtemp_1")
 	sendEvent(name: "temperature", value: entity.state, unit: "C")

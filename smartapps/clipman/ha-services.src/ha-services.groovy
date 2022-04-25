@@ -216,7 +216,6 @@ def addDevice() {
 		if(settings.selectedAddDevice != "None") {
 			def tmp = settings.selectedAddDevice.split(" \\[")
 			def entity_id = tmp[0]
-			def dni = entity_id
 			def haDevice = getEntityById(state.dataDeviceList, entity_id)
 			if(haDevice) {
 				def dth = "HomeAssistant Devices"
@@ -229,8 +228,8 @@ def addDevice() {
 				}
 				def name = entity_id.split("\\.")[1]
 				try {
-					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
-					addChildDevice("clipman", dth, dni, null, ["name": name, "label": label])
+					//def childDevice = addChildDevice("clipman", dth, entity_id, location.hubs[0].id, ["label": name])
+					addChildDevice("clipman", dth, entity_id, null, ["name": name, "label": label])
 				} catch(err) {
 					log.error "Add HA Device ERROR >> ${err}"
 				}
@@ -244,7 +243,6 @@ def addSensor() {
 		if(settings.selectedAddSensor != "None") {
 			def tmp = settings.selectedAddSensor.split(" \\[")
 			def entity_id = tmp[0]
-			def dni = entity_id
 			def haSensor = getEntityById(state.dataSensorList, entity_id)
 			if(haSensor) {
 				def dth = "HomeAssistant Sensors"
@@ -257,8 +255,8 @@ def addSensor() {
 				}
 				def name = entity_id.split("\\.")[1]
 				try {
-					//def childDevice = addChildDevice("clipman", dth, dni, location.hubs[0].id, ["label": name])
-					addChildDevice("clipman", dth, dni, null, ["name": name, "label": label])
+					//def childDevice = addChildDevice("clipman", dth, entity_id, location.hubs[0].id, ["label": name])
+					addChildDevice("clipman", dth, entity_id, null, ["name": name, "label": label])
 				} catch(err) {
 					log.error "Add HA Sensor ERROR >> ${err}"
 				}
@@ -377,24 +375,26 @@ def getEntityList() {
 }
 
 def updateDevice() {
-	def dni = params.entity_id
-	def attr = null
+	def entity_id = params.entity_id
+	def attributes = null
 	def oldstate = null
 	try {
-		attr = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
+		attributes = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
+		//log.info "updateDevice attributes ${attributes}"
 	} catch(err) {
+		attributes = null
 	}
 	oldstate = params?.old
 	try {
-		def device = getChildDevice(dni)
+		def device = getChildDevice(entity_id)
 		if(device) {
-			log.debug "Device[${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			log.debug "Device[${entity_id}] state:${params.value}  attributes:${attributes}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
-				setEntityStatus(device, dni, state, unit)
+				setEntityStatus(device, entity_id, state, unit)
 			} else {
-				device.setStatus(params.value, attr)
+				device.setEntityStatus(params.value, attributes)
 			}
 		}
 	} catch(err) {
@@ -405,24 +405,26 @@ def updateDevice() {
 }
 
 def updateSensor() {
-	def dni = params.entity_id
-	def attr = null
+	def entity_id = params.entity_id
+	def attributes = null
 	def oldstate = null
 	try {
-		attr = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
+		attributes = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
+		//log.info "updateSensor attributes ${attributes}"
 	} catch(err) {
+		attributes = null
 	}
 	oldstate = params?.old
 	try {
-		def device = getChildDevice(dni)
+		def device = getChildDevice(entity_id)
 		if(device) {
-			log.debug "Sensor[${dni}] state:${params.value}  attr:${attr}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
+			log.debug "Sensor[${entity_id}] state:${params.value}  attributes:${attributes}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
-				setEntityStatus(device, dni, state, unit)
+				setEntityStatus(device, entity_id, state, unit)
 			} else {
-				device.setStatus(params.value, attr)
+				device.setEntityStatus(params.value, attributes)
 			}
 		}
 	} catch(err) {
@@ -439,7 +441,7 @@ def updateEntity(entity_id) {
 		try {
 			log.debug "Entity[${entity_id}] state:${entity.state}  attr:${entity.attributes}  " + ((entity.unit) ? "  unit:${entity.unit}" : "")
 			setEntityStatus(device, entity_id, entity.state, entity.unit)
-			device.setStatus(entity.state, entity.attributes)
+			device.setEntityStatus(entity.state, entity.attributes)
 		} catch (e) {
 			log.error "HomeAssistant Services updateEntity Error: $e"
 		}
@@ -513,7 +515,7 @@ def setEntityStatus(device, entity_id, value, unit) {
 	} else {
 		//switch, light, fan, input_boolean, ...
 	}
-	device.setStatus(state)
+	device.setEntityStatus(state)
 }
 
 def authError() {

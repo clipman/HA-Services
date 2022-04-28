@@ -26,7 +26,7 @@ def setEntityStatus(state) {
 }
 
 def setEntityStatus(state, attributes) {
-	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
+	log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 }
 
 def on() {
@@ -75,6 +75,7 @@ def control(onOff) {
 	case "script":
 		if(onOff == "on") {
 			parent.services("/api/services/script/" + entity_name, [])
+			sendEvent(name: "switch", value: onOff)
 		}
 		break;
 	case "rest_command":

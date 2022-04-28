@@ -11,6 +11,7 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
+ *
  */
 
 import groovy.json.JsonSlurper
@@ -294,18 +295,6 @@ def getEntityById(list, id) {
 	return target
 }
 
-/*
-//addedDNIList.contains(entity_id), 이게 잘 안되어서 만들었는데
-//이렇게 하면 안됨: 이유는 모름
-def existEntityInList(list, id) {
-	list.each { item ->
-		if(item == id) {
-			return true
-		}
-	}
-	return false
-}
-*/
 def existEntityInList(list, id) {
 	for (item in list) {
 		if(item == id) {
@@ -386,39 +375,6 @@ def updateDevice() {
 		def device = getChildDevice(entity_id)
 		if(device) {
 			log.debug "Device[${entity_id}] state:${params.value}  attributes:${attributes}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
-			if (params.value != oldstate) {
-				def state = params.value
-				def unit = (params?.unit) ? params.unit : ""
-				if(state == "unavailable" || state == "unknown") {
-					state = oldstate
-				}
-				setEntityStatus(device, entity_id, state, unit)
-			} else {
-				device.setEntityStatus(params.value, attributes)
-			}
-		}
-	} catch(err) {
-		log.error "${err}"
-	}
-	def deviceJson = new groovy.json.JsonOutput().toJson([result: true])
-	render contentType: "application/json", data: deviceJson
-}
-
-def updateSensor() {
-	def entity_id = params.entity_id
-	def attributes = null
-	def oldstate = null
-	try {
-		attributes = new groovy.json.JsonSlurper().parseText(new String(params.attr.decodeBase64()))
-		//log.info "updateSensor attributes ${attributes}"
-	} catch(err) {
-		attributes = null
-	}
-	oldstate = params?.old
-	try {
-		def device = getChildDevice(entity_id)
-		if(device) {
-			log.debug "Sensor[${entity_id}] state:${params.value}  attributes:${attributes}  oldstate:${oldstate}" + ((params?.unit) ? "  unit:${params.unit}" : "")
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
@@ -552,12 +508,10 @@ mappings {
 	if (!params.access_token || (params.access_token && params.access_token != state.accessToken)) {
 		path("/config")	{ action: [GET: "authError"] }
 		path("/device")	{ action: [GET: "authError"] }
-		path("/sensor")	{ action: [GET: "authError"] }
 		path("/list") { action: [GET: "authError"] }
 	} else {
 		path("/config")	{ action: [GET: "renderConfig"] }
 		path("/device")	{ action: [GET: "updateDevice"] }
-		path("/sensor")	{ action: [GET: "updateSensor"] }
 		path("/list") { action: [GET: "getList"] }
 	}
 }

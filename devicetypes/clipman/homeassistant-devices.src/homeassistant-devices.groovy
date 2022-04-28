@@ -75,7 +75,6 @@ def control(onOff) {
 	case "script":
 		if(onOff == "on") {
 			parent.services("/api/services/script/" + entity_name, [])
-			sendEvent(name: "switch", value: onOff)
 		}
 		break;
 	case "rest_command":

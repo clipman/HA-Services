@@ -22,13 +22,23 @@ capabilityMap = [
 		capability: "capability.airConditionerFanMode",
 		attributes: ["fanMode"]
 	],
+	"rainfallProbability": [
+		name: "Rainfall Probability",
+		capability: "capability.circlecircle06391.precipChance",
+		attributes: ["precipChance"]
+	],
 	"veryFineDustSensor": [
 		name: "Very Fine Dust Sensor",
 		capability: "capability.veryFineDustSensor",
 		attributes: ["veryFineDustLevel"]
 	],
+	"weatherForecast": [
+		name: "Weather Forecast",
+		capability: "capability.circlecircle06391.weatherforecast",
+		attributes: ["weatherForecast"]
+	],
 	"waterSensor": [
-		name: "WaterSensor",
+		name: "Water Sensor",
 		capability: "capability.borderreason25422.waterSensor",
 		attributes: ["water"]
 	]
@@ -37,7 +47,9 @@ capabilityMap = [
 @Field
 attributesMap = [
 	"fanMode": "fan_mode",
+	"precipChance": "rainfall_probability",
 	"veryFineDustLevel": "very_fine_dust_level",
+	"weatherForecast": "weather_forecast",
 	"water": "water"
 ]
 
@@ -45,7 +57,7 @@ definition(
 	name: "HA-Updater",
 	namespace: "clipman",
 	author: "clipman",
-	description: "HomeAssistant의 센서로 등록된 Smartthing의 센서값이 변경되면 갱신합니다.",
+	description: "HomeAssistant의 센서로 등록된 SmartThings의 센서값이 변경되면 갱신합니다.",
 	category: "My Apps",
 	iconUrl: "https://brands.home-assistant.io/_/ha_services/icon.png",
 	iconX2Url: "https://brands.home-assistant.io/_/ha_services/icon.png",

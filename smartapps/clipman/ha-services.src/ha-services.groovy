@@ -1,5 +1,5 @@
 /**
- *  HA-Services v2022-04-21
+ *  HA-Services v2022-04-28
  *  clipman@naver.com
  *  날자
  *
@@ -21,13 +21,13 @@ import groovy.transform.Field
 deviceEntity = ["switch", "light", "climate", "fan", "vacuum", "cover", "lock", "script",
 				"button", "input_button", "automation", "camera", "input_boolean", "media_player"]
 @Field
-sensorEntity = ["sensor", "binary_sensor", "device_tracker", "input_datetime", "input_number", "input_text", "zone"]
+sensorEntity = ["sensor", "binary_sensor", "device_tracker", "input_datetime", "input_number", "input_select", "input_text", "zone"]
 
 definition(
 	name: "HA-Services",
 	namespace: "clipman",
 	author: "clipman",
-	description: "HomeAssistant의 장치/센서들을 Smartthing로 가져오고 서비스를 호출합니다.",
+	description: "HomeAssistant의 장치/센서들을 SmartThings로 가져오고 서비스를 호출합니다.",
 	category: "My Apps",
 	iconUrl: "https://brands.home-assistant.io/_/ha_services/icon.png",
 	iconX2Url: "https://brands.home-assistant.io/_/ha_services/icon.png",
@@ -95,9 +95,7 @@ def devicePage() {
 	state.dataDeviceList.each {
 		def entity_id = "${it.id}"			//def entity_id = "${it.entity_id}"
 		def friendly_name = "${it.name}"	//def friendly_name = "${it.friendly_name}"
-		if(friendly_name == null) {
-			friendly_name = ""
-		}
+		if(friendly_name == null) friendly_name = ""
 		if(!existEntityInList(addedDNIList, entity_id)) {
 			if(!settings.entityFilter) {
 				list.push("${entity_id} [${friendly_name}]")
@@ -131,9 +129,7 @@ def sensorPage() {
 	state.dataSensorList.each {
 		def entity_id = "${it.id}"			//def entity_id = "${it.entity_id}"
 		def friendly_name = "${it.name}"	//def friendly_name = "${it.friendly_name}"
-		if(friendly_name == null) {
-			friendly_name = ""
-		}
+		if(friendly_name == null) friendly_name = ""
 		if(!existEntityInList(addedDNIList, entity_id)) {
 			if(!settings.entityFilter) {
 				list.push("${entity_id} [${friendly_name}]")
@@ -340,6 +336,7 @@ def getEntityList() {
 					def entity_id = it.entity_id
 					def friendly_name = it.attributes.friendly_name
 					def entity_type = entity_id.split("\\.")[0]
+					if(friendly_name == null) friendly_name = ""
 					if(deviceEntity.contains(entity_type)) {
 						if(!settings.entityFilter) {
 							def objDevice = [id: "${it.entity_id}", name: ""]
@@ -392,6 +389,9 @@ def updateDevice() {
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
+				if(state == "unavailable" || state == "unknown") {
+					state = oldstate
+				}
 				setEntityStatus(device, entity_id, state, unit)
 			} else {
 				device.setEntityStatus(params.value, attributes)
@@ -422,6 +422,9 @@ def updateSensor() {
 			if (params.value != oldstate) {
 				def state = params.value
 				def unit = (params?.unit) ? params.unit : ""
+				if(state == "unavailable" || state == "unknown") {
+					state = oldstate
+				}
 				setEntityStatus(device, entity_id, state, unit)
 			} else {
 				device.setEntityStatus(params.value, attributes)
@@ -515,7 +518,9 @@ def setEntityStatus(device, entity_id, value, unit) {
 	} else {
 		//switch, light, fan, input_boolean, ...
 	}
-	device.setEntityStatus(state)
+	if(value != "unavailable" && value != "unknown") {
+		device.setEntityStatus(state)
+	}
 }
 
 def authError() {

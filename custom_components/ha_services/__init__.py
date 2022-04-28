@@ -68,7 +68,6 @@ async def async_setup_entry(hass, config_entry):
     app_url = config_entry.data[CONF_APP_URL]
     app_id  = config_entry.data[CONF_APP_ID]
     access_token = config_entry.data[CONF_ACCESS_TOKEN]
-    sensors = ["sensor", "binary_sensor", "device_tracker", "input_datetime", "input_number", "input_select", "input_text", "zone"]
 
     session = async_get_clientsession(hass)
     registerList = await getRegisteredHADeviceList(session, app_url, app_id, access_token)
@@ -79,15 +78,11 @@ async def async_setup_entry(hass, config_entry):
             return None
 
         id  = newState.entity_id
-        entity_type = id.split('.')[0]
-        if entity_type in sensors:
-            url = app_url + app_id + "/sensor?access_token=" + access_token + "&entity_id=" + id + "&value=" + newState.state
-            try:
-                url += "&unit=" + newState.as_dict()['attributes']['unit_of_measurement']
-            except:
-                url = url
-        else:
-            url = app_url + app_id + "/device?access_token=" + access_token + "&entity_id=" + id + "&value=" + newState.state
+        url = app_url + app_id + "/device?access_token=" + access_token + "&entity_id=" + id + "&value=" + newState.state
+        try:
+            url += "&unit=" + newState.as_dict()['attributes']['unit_of_measurement']
+        except:
+            url = url
 
         try:
             attr = json.dumps(newState.as_dict().get('attributes'))

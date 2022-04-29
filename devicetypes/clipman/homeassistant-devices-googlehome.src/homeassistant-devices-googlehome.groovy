@@ -60,7 +60,11 @@ def setEntityStatus(state, attributes) {
 			setStatusbar(attributes.media_title)
 		}
 	} else {
-		sendEvent(name: "trackDescription", value: "-", displayed: "true")
+		if (attributes.app_name != null) {
+			sendEvent(name: "trackDescription", value: attributes.app_name, displayed: "true")
+		} else {
+			sendEvent(name: "trackDescription", value: "-", displayed: "true")
+		}
 		if(state == "playing") {
 			setStatusbar("재생중")
 		}

@@ -1478,7 +1478,7 @@ def stateChangeHandler(evt) {
 	data["value"] = device.currentValue(evt.name)
 	data["${evt.name}"] = device.currentValue(evt.name)
 	def payload = new groovy.json.JsonOutput().toJson(data)
-	services("/api/services/mqtt/publish", ["topic": "/smartthings/"+device.deviceNetworkId+"/"+evt.name, "payload": "'" + payload.toString() + "'"])
+	services("/api/services/mqtt/publish", ["topic": "smartthings/"+device.deviceNetworkId+"/"+evt.name, "payload": "'" + payload.toString() + "'"])
 	log.debug "stateChangeHandler: ${device.deviceNetworkId}/${evt.name}, " + payload.toString()
 }
 */
@@ -1486,7 +1486,7 @@ def stateChangeHandler(evt) {
 //이벤트가 발생한 디바이스의 속성을 MQTT로 Publish한다.
 def stateChangeHandler(evt) {
 	def device = evt.getDevice()
-	services("/api/services/mqtt/publish", ["topic": "/smartthings/"+device.deviceNetworkId+"/"+evt.name, "payload": '"' + device.currentValue(evt.name) + '"'])
+	services("/api/services/mqtt/publish", ["topic": "smartthings/"+device.deviceNetworkId+"/"+evt.name, "payload": '"' + device.currentValue(evt.name) + '"'])
 	log.debug "MQTT Publish: /smartthings/${device.deviceNetworkId}/${evt.name}, " + device.currentValue(evt.name)
 }
 */
@@ -1515,7 +1515,7 @@ def stateChangeHandler(evt) {
 		}
 	}
 	def payload = new groovy.json.JsonOutput().toJson(data)
-	services("/api/services/mqtt/publish", ["topic": "/smartthings/"+device.deviceNetworkId+"/"+evt.name, "payload": "'" + payload.toString() + "'"])
+	services("/api/services/mqtt/publish", ["topic": "smartthings/"+device.deviceNetworkId+"/"+evt.name, "payload": "'" + payload.toString() + "'"])
 	log.debug "stateChangeHandler: ${device.deviceNetworkId}/${evt.name}, " + payload.toString()
 }
 */
@@ -1542,7 +1542,7 @@ def publishDevice(device) {
 		}
 	}
 	def payload = new groovy.json.JsonOutput().toJson(data)
-	services("/api/services/mqtt/publish", ["topic": "/smartthings/"+device.deviceNetworkId, "payload": "'" + payload.toString() + "'"])
+	services("/api/services/mqtt/publish", ["topic": "smartthings/"+device.deviceNetworkId, "payload": "'" + payload.toString() + "'"])
 	log.debug "publishDevice: ${device.deviceNetworkId}/, " + payload.toString()
 }
 

@@ -1601,7 +1601,7 @@ def renderConfig() {
 		"#configuration.yaml\n" +
 		"rest_command:\n" +
 		"  publish_smartthings_devices:\n" +
-		"    url: https://graph-ap02-apnortheast2.api.smartthings.com/api/smartapps/installations/$app.id/publish?access_token=$state.accessToken\n" +
+		"    url: "+apiServerUrl("/api/smartapps/installations/")+"$app.id/publish?access_token=$state.accessToken\n" +
 		"    method: GET\n" +
 		"\n" +
 		"#자동화 참고\n" +

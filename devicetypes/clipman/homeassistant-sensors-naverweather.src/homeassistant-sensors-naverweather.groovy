@@ -22,7 +22,7 @@ metadata {
 		capability "Ultraviolet Index"						//
 		capability "circlecircle06391.todaymaxtemp"
 		capability "circlecircle06391.todaymintemp"
-		capability "circlecircle06391.todayfeeltemp"		//
+		capability "circlecircle06391.todayfeeltemp"
 		capability "circlecircle06391.finedustgrade"
 		capability "circlecircle06391.ultrafinedustgrade"
 		capability "circlecircle06391.windspeed"
@@ -44,7 +44,8 @@ metadata {
 def setEntityStatus(state) {
 	//state = state.replace("\t", "").replace("\n", "")
    	//sendEvent(name: "statusbar", value: state)
-	state = state.replace("어제보다 ", "")
+	def forecast = state.trim().replace("어제보다 ", "").split("  ")
+	state = forecast[1] + ", " + forecast[0]
 	sendEvent(name: "weatherForecast", value: state, unit: "")
 }
 
@@ -53,6 +54,7 @@ def setEntityStatus(state, attributes) {
 	def entity
    	entity = parent.getEntityStatus("sensor.naver_weather_nowtemp_1")
 	sendEvent(name: "temperature", value: entity.state, unit: "C")
+   	entity = parent.getEntityStatus("sensor.naver_weather_todayfeeltemp_1")
 	sendEvent(name: "temperatureFeel", value: entity.state, unit: "C")
    	entity = parent.getEntityStatus("sensor.naver_weather_todaymaxtemp_1")
 	sendEvent(name: "temperatureMax", value: entity.state, unit: "C")

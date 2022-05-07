@@ -15,7 +15,7 @@
  */
 
 metadata {
-	definition (name: "HomeAssistant Devices (AirPurifier)", namespace: "clipman", author: "clipman", mnmn:"SmartThingsCommunity", vid: "e96b2daa-675f-3fd1-9bb6-38c31acc8d11", ocfDeviceType: "oic.d.airpurifier") {
+	definition (name: "HomeAssistant Devices (AirPurifier)", namespace: "clipman", author: "clipman", mnmn:"SmartThingsCommunity", vid: "f875bca5-6282-32c7-8554-d9c96c160faa", ocfDeviceType: "oic.d.airpurifier") {
 		capability "Switch"								//on, off
 		capability "Dust Sensor"						//dustLevel, fineDustLevel
 		capability "Very Fine Dust Sensor"				//veryFineDustLevel

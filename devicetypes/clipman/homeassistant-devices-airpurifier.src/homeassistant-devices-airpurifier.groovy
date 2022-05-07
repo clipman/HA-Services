@@ -1,5 +1,5 @@
 /**
- *  HomeAssistant Devices (AirPurifier) v2022-04-23
+ *  HomeAssistant Devices (AirPurifier) v2022-05-08
  *  clipman@naver.com
  *  날자
  *
@@ -15,11 +15,14 @@
  */
 
 metadata {
-	definition (name: "HomeAssistant Devices (AirPurifier)", namespace: "clipman", author: "clipman", ocfDeviceType: "oic.d.airpurifier") {
-		capability "Switch"							//on, off
-		capability "Dust Sensor"					//dustLevel, fineDustLevel
-		capability "Very Fine Dust Sensor"			//veryFineDustLevel
-		capability "Odor Sensor"					//odorLevel
+	definition (name: "HomeAssistant Devices (AirPurifier)", namespace: "clipman", author: "clipman", mnmn:"SmartThingsCommunity", vid: "e96b2daa-675f-3fd1-9bb6-38c31acc8d11", ocfDeviceType: "oic.d.airpurifier") {
+		capability "Switch"								//on, off
+		capability "Dust Sensor"						//dustLevel, fineDustLevel
+		capability "Very Fine Dust Sensor"				//veryFineDustLevel
+		capability "Odor Sensor"						//odorLevel
+		capability "circlecircle06391.signalLighting"	//signalLighting
+		capability "circlecircle06391.airRemoval"		//airRemoval
+		capability "circlecircle06391.circulateDir"		//circulateDir
 		capability "Refresh"
 	}
 }
@@ -39,6 +42,13 @@ def setEntityStatus(state, attributes) {
 	sendEvent(name: "veryFineDustLevel", value: entity.state, unit: entity.unit)
    	entity = parent.getEntityStatus("sensor.anbang_gonggiceongjeonggi_aqi")
 	sendEvent(name: "odorLevel", value: entity.state, unit: entity.unit)
+
+   	entity = parent.getEntityStatus("switch.anbang_gonggiceongjeonggi_signal_lighting")
+	sendEvent(name: "signalLighting", value: entity.state)
+   	entity = parent.getEntityStatus("switch.anbang_gonggiceongjeonggi_air_removal")
+	sendEvent(name: "airRemoval", value: entity.state)
+   	entity = parent.getEntityStatus("switch.anbang_gonggiceongjeonggi_circulate_dir")
+	sendEvent(name: "circulateDir", value: entity.state)
 }
 
 def on() {
@@ -59,4 +69,16 @@ def refresh() {
 
 def control(onOff) {
 	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": device.deviceNetworkId])
+}
+
+def setSignalLighting(onOff) {
+	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": "switch.anbang_gonggiceongjeonggi_signal_lighting"])
+}
+
+def setAirRemoval(onOff) {
+	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": "switch.anbang_gonggiceongjeonggi_air_removal"])
+}
+
+def setCirculateDir(onOff) {
+	parent.services("/api/services/homeassistant/turn_" + onOff, ["entity_id": "switch.anbang_gonggiceongjeonggi_circulate_dir"])
 }

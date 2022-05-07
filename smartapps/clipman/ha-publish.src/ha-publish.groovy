@@ -1535,7 +1535,7 @@ def publishDevice(device) {
 		try {
 			def val = device.currentValue(attribute.name)
 			if(val != null) {
-		   		data["${attribute.name}"] = val
+				data["${attribute.name}"] = val
 			}
 		} catch(e) {
 			log.error("${e} --> ${attribute.name}")

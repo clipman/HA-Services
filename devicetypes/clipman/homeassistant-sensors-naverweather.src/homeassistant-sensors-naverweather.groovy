@@ -70,8 +70,6 @@ def setEntityStatus(state, attributes) {
 	sendEvent(name: "dustGrade", value: entity.state, unit: entity.unit)
    	entity = parent.getEntityStatus("sensor.naver_weather_ultrafinedustgrade_1")
 	sendEvent(name: "fineDustGrade", value: entity.state, unit: entity.unit)
-   	entity = parent.getEntityStatus("sensor.naver_weather_rainpercent_1")	//todayuv
-	sendEvent(name: "ultravioletIndex", value: entity.state, unit: entity.unit)
    	entity = parent.getEntityStatus("sensor.naver_weather_ultrafinedustgrade_1")
 	sendEvent(name: "fineDustGrade", value: entity.state, unit: entity.unit)
 	entity = parent.getEntityStatus("sensor.naver_weather_windspeed_1")
@@ -92,7 +90,11 @@ def setEntityStatus(state, attributes) {
 		sendEvent(name: "rainyStartTime", value: entity.state.replace("시","") as Integer, unit: "시")
 	}
 
-	sendEvent(name: "ultravioletGrade", value: "자외선 지수 = 강수확율로 바뀜", unit: "")
+   	entity = parent.getEntityStatus("sensor.naver_weather_ozongrade_1")
+	sendEvent(name: "ozonGrade", value: entity.state, unit: entity.unit)
+
+	sendEvent(name: "ultravioletIndex", value: 0, unit: "")
+	sendEvent(name: "ultravioletGrade", value: "", unit: "")
 }
 
 def installed() {

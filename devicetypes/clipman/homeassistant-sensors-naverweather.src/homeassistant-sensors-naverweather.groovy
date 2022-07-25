@@ -44,8 +44,7 @@ metadata {
 def setEntityStatus(state) {
 	//state = state.replace("\t", "").replace("\n", "")
    	//sendEvent(name: "statusbar", value: state)
-	def forecast = state.trim().replace("어제보다 ", "").split("  ")
-	state = forecast[1] + ", " + forecast[0]
+	state = state.replace(", 어제보다",",")
 	sendEvent(name: "weatherForecast", value: state, unit: "")
 }
 

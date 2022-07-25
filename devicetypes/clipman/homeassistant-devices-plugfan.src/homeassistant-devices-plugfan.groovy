@@ -29,15 +29,22 @@ def setEntityStatus(state) {
 
 def setEntityStatus(state, attributes) {
 	log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
+	def entity
 	if(attributes["power"] != null){
 		sendEvent(name: "power", value:  attributes["power"] as double, unit: "W", displayed: true)
-	}else if(attributes["Power"] != null){	// Tasmota Power
-		sendEvent(name: "power", value:  attributes["Power"] as double, unit: "W", displayed: true)
+	} else {
+		entity = parent.getEntityStatus(device.deviceNetworkId.replace("switch.", "sensor.") + "_power")
+		if(entity.state != null){
+			sendEvent(name: "power", value: entity.state, unit: entity.unit, displayed: true)
+		}
 	}
 	if(attributes["energy"] != null){
 		sendEvent(name: "energy", value: attributes["energy"] as double, unit: "kWh", displayed: true)
-	}else if(attributes["Total"] != null){	// Tasmota Energy
-		sendEvent(name: "energy", value: attributes["Total"] as double, unit: "kWh", displayed: true)
+	} else {
+		entity = parent.getEntityStatus(device.deviceNetworkId.replace("switch.", "sensor.") + "_energy")
+		if(entity.state != null){
+			sendEvent(name: "energy", value: entity.state, unit: entity.unit, displayed: true)
+		}
 	}
 }
 

@@ -3,7 +3,7 @@
  *  clipman@naver.com
  *  날자
  *  가상스위치를 이용한 세탁기
- *  sensor.setaggi_power, sensor.setaggi_energy를 읽어와서 적용
+ *  sensor.washer_power, sensor.washer_energy를 읽어와서 적용
  
 #configuration.yaml
 switch: !include switchs.yaml
@@ -51,7 +51,7 @@ rest_command:
     from: 'on'
     id: 종료
   - platform: numeric_state
-    entity_id: sensor.setaggi_power
+    entity_id: sensor.washer_power
     for:
       hours: 0
       minutes: 1
@@ -59,7 +59,7 @@ rest_command:
     above: '5'
     id: 'ON'
   - platform: numeric_state
-    entity_id: sensor.setaggi_power
+    entity_id: sensor.washer_power
     for:
       hours: 0
       minutes: 2
@@ -121,7 +121,7 @@ rest_command:
   description: ''
   trigger:
   - platform: state
-    entity_id: sensor.setaggi_power, sensor.setaggi_energy
+    entity_id: sensor.washer_power, sensor.washer_energy
     id: refresh_washer
   condition: []
   action:
@@ -167,14 +167,18 @@ def setEntityStatus(state, attributes) {
 	if(attributes["power"] != null){
 		sendEvent(name: "power", value:  attributes["power"] as double, unit: "W", displayed: true)
 	} else {
-        entity = parent.getEntityStatus("sensor.setaggi_power")
-        sendEvent(name: "power", value: entity.state, unit: entity.unit, displayed: true)
+		entity = parent.getEntityStatus(device.deviceNetworkId.replace("switch.", "sensor.") + "_power")
+		if(entity.state != null){
+			sendEvent(name: "power", value: entity.state, unit: entity.unit, displayed: true)
+		}
 	}
 	if(attributes["energy"] != null){
 		sendEvent(name: "energy", value: attributes["energy"] as double, unit: "kWh", displayed: true)
 	} else {
-        entity = parent.getEntityStatus("sensor.setaggi_energy")
-        sendEvent(name: "energy", value: entity.state, unit: entity.unit, displayed: true)
+		entity = parent.getEntityStatus(device.deviceNetworkId.replace("switch.", "sensor.") + "_energy")
+		if(entity.state != null){
+			sendEvent(name: "energy", value: entity.state, unit: entity.unit, displayed: true)
+		}
 	}
 }
 

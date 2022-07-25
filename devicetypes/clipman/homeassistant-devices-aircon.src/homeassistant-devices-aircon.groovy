@@ -1,7 +1,8 @@
 /**
- *  HomeAssistant Devices (Aircon) v2022-04-23
+ *  HomeAssistant Devices (Aircon) v2022-07-22
  *  clipman@naver.com
  *  날자
+ *  온도조절 Step: 0.1
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -15,7 +16,7 @@
  */
 
 metadata {
-	definition (name: "HomeAssistant Devices (Aircon)", namespace: "clipman", author: "clipman", ocfDeviceType: "oic.d.airconditioner") {
+	definition (name: "HomeAssistant Devices (Aircon)", namespace: "clipman", author: "clipman", ocfDeviceType: "oic.d.airconditioner", mnmn: "SmartThingsCommunity", vid: "cf6a895f-409a-3a6f-b48d-8ba77a617190") {
 		capability "Switch"								//on, off
 		capability "Air Conditioner Mode"				//airConditionerMode, supportedAcModes=[auto, wind, cool, dry, coolClean, dryClean], setAirConditionerMode(mode)
 		capability "Temperature Measurement"			//temperature
@@ -27,15 +28,21 @@ metadata {
 }
 
 def setEntityStatus(state) {
-	sendEvent(name: "switch", value: state)
+	if(state=="off") {
+		sendEvent(name: "switch", value: "off")
+	} else {
+		sendEvent(name: "switch", value: "on")
+	}
 }
 
 def setEntityStatus(state, attributes) {
 	//log.debug "setEntityStatus(state, attributes) : ${state}, ${attributes}"
 	def airConditionerMode = modeHA2ST(state)
 	def fanMode = attributes.fan_mode
-	def temperature = attributes.current_temperature as int
-	def coolingSetpoint = attributes.temperature as int
+	//def temperature = attributes.current_temperature as int
+	def temperature = attributes.current_temperature as Double
+	//def coolingSetpoint = attributes.temperature as int
+	def coolingSetpoint = attributes.temperature as Double
 
 	sendEvent(name: "temperature", value: temperature, unit: "C", displayed: true)
 	sendEvent(name: "coolingSetpoint", value: coolingSetpoint, unit: "C", displayed: true)
@@ -99,17 +106,19 @@ def setFanSpeed(fanSpeed){
 }
 
 def modeHA2ST(ha_mode) {
-	Map mode = ["heat_cool": "auto", "cool": "cool", "dry": "dry", "fan_only": "fanOnly"]
+	//Map mode = ["heat_cool": "auto", "cool": "cool", "dry": "dry", "fan_only": "fanOnly"]
+	Map mode = ["auto": "auto", "heat_cool": "auto", "cool": "cool", "dry": "dry", "fan_only": "fanOnly"]
 	return mode[ha_mode]
 }
 
 def modeST2HA(st_mode) {
-	Map mode = ["auto": "heat_cool", "cool": "cool", "dry": "dry", "fanOnly": "fan_only", "coolClean": "cool", "dryClean": "dry", "heatClean": "fan_only", "notSupported": "heat_cool"]
+	//Map mode = ["auto": "heat_cool", "cool": "cool", "dry": "dry", "fanOnly": "fan_only", "coolClean": "cool", "dryClean": "dry", "heatClean": "fan_only", "notSupported": "heat_cool"]
+	Map mode = ["auto": "auto", "cool": "cool", "dry": "dry", "fanOnly": "fan_only", "coolClean": "cool", "dryClean": "dry", "heatClean": "fan_only", "notSupported": "auto"]
 	return mode[st_mode]
 }
 
 def speedFanMode2FanSpeed(ha_speed) {
-	Map speed = ["auto": 0, "medium": 1, "high": 2, "turbo": 3]
+	Map speed = ["auto": 0, "medium": 1, "high": 2, "turbo": 4]
 	//Map speed = ["low": 1, "medium": 2, "high": 3]
 	return speed[ha_speed]
 }

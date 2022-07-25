@@ -32,10 +32,10 @@ metadata {
 def setEntityStatus(state) {
 	//log.debug "setEntityStatus(state) : ${state}"
 	state = state.replace("\t", "").replace("\n", "")
-	sendEvent(name: "statusbar", value: state)
-
+	//sendEvent(name: "statusbar", value: state)
 	state = state.replace(" ppm", "")
 	sendEvent(name: "carbonDioxide", value: state as int, unit: "ppm", displayed: true)
+	sendEvent(name: "statusbar", value: device.currentValue("temperature") + "℃ " + device.currentValue("humidity") + "% " + device.currentValue("carbonDioxide") + "ppm")
 }
 
 def setEntityStatus(state, attributes) {
@@ -52,6 +52,7 @@ def setEntityStatus(state, attributes) {
 	if(attributes["discomfort_class"] != null){
 		sendEvent(name: "discomfortClass", value:  attributes["discomfort_class"], unit: "", displayed: true)
 	}
+	sendEvent(name: "statusbar", value: device.currentValue("temperature") + "℃ " + device.currentValue("humidity") + "% " + device.currentValue("carbonDioxide") + "ppm")
 }
 
 def installed() {
